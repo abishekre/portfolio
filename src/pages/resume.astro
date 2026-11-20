@@ -1,0 +1,141 @@
+---
+import fs from 'node:fs';
+import Base from '../layouts/Base.astro';
+import AppShell from '../components/AppShell.astro';
+import IndexCard from '../components/IndexCard.astro';
+import { allProjects } from '../lib/projects';
+import { PAPER } from '../lib/paper';
+import { SITE } from '../site';
+
+const projects = await allProjects();
+const hasPdf = fs.existsSync(new URL('../../public/resume.pdf', import.meta.url));
+
+const skills = [
+  ['Languages', 'TypeScript, JavaScript, Rust, Kotlin, Python, SQL'],
+  ['Apps', 'React Native and Expo, React, Next.js, Astro, Jetpack Compose'],
+  ['Data', 'Supabase and Postgres with row-level security, SQLite, offline sync'],
+  ['Also', 'Three.js, ffmpeg, Playwright, Vitest, property-based testing, GitHub Actions, Vercel'],
+];
+---
+
+<Base title="Résumé · Abishek R Edakkalathur" description={SITE.bio} statusInk={PAPER.fg} tint="#F6F1E6">
+  <Fragment slot="left"><IndexCard compact /></Fragment>
+
+  <AppShell slug="resume" theme={PAPER} label="Résumé">
+    <h1>{SITE.name}</h1>
+    <p class="lede">{SITE.bio}</p>
+
+    {
+      hasPdf && (
+        <a class="pdf" href={SITE.resumePdf} download>
+          Download PDF
+        </a>
+      )
+    }
+
+    <h2>What I work with</h2>
+    <dl>
+      {
+        skills.map(([k, v]) => (
+          <div>
+            <dt>{k}</dt>
+            <dd>{v}</dd>
+          </div>
+        ))
+      }
+    </dl>
+
+    <h2>Things I've built</h2>
+    <ul class="work">
+      {
+        projects.map((p) => (
+          <li>
+            <a href={`/${p.id}`}>{p.data.name}</a>
+            <span>{p.data.tagline}</span>
+          </li>
+        ))
+      }
+    </ul>
+
+    <h2>Contact</h2>
+    <p class="contact">
+      <a href={`mailto:${SITE.email}`}>{SITE.email}</a><br />
+      <a href={SITE.github}>github.com/abishekre</a><br />
+      <a href={SITE.linkedin}>LinkedIn</a>
+    </p>
+  </AppShell>
+</Base>
+
+<style>
+  h1 {
+    margin: 8px 0 0;
+    font: 400 40px/0.98 var(--serif);
+  }
+  .lede {
+    margin: 12px 0 0;
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--app-muted);
+  }
+  .pdf {
+    display: inline-flex;
+    margin-top: 18px;
+    padding: 12px 18px;
+    border-radius: 999px;
+    background: var(--app-fg);
+    color: var(--app-bg);
+    font-weight: 600;
+    font-size: 14.5px;
+    text-decoration: none;
+  }
+  h2 {
+    margin: 30px 0 12px;
+    padding-top: 18px;
+    border-top: 1px solid var(--app-line);
+    font: 400 11.5px/1 var(--mono);
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--app-muted);
+  }
+  dl {
+    margin: 0;
+    display: grid;
+    gap: 12px;
+  }
+  dt {
+    font-weight: 600;
+    font-size: 14px;
+  }
+  dd {
+    margin: 2px 0 0;
+    font-size: 14.5px;
+    line-height: 1.5;
+  }
+  .work {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 12px;
+  }
+  .work a {
+    font: 400 22px/1.1 var(--serif);
+    color: var(--app-fg);
+    text-underline-offset: 3px;
+  }
+  .work span {
+    display: block;
+    margin-top: 2px;
+    font-size: 13.5px;
+    line-height: 1.45;
+    color: var(--app-muted);
+  }
+  .contact {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.8;
+  }
+  .contact a {
+    color: var(--app-fg);
+  }
+</style>

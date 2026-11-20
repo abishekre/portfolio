@@ -1,0 +1,106 @@
+---
+import type { Project } from '../lib/projects';
+interface Props {
+  project: Project;
+  /** 'desk' sits on the desk; 'app' sits inside the phone, themed. */
+  variant: 'desk' | 'app';
+}
+const { project, variant } = Astro.props;
+const n = project.data.notes;
+---
+
+<section class:list={['notes', variant]} aria-label="Build notes">
+  <p class="eyebrow">Build notes</p>
+  <dl>
+    <div>
+      <dt>Built with</dt>
+      <dd class="chips">{n.stack.map((s) => <span>{s}</span>)}</dd>
+    </div>
+    {
+      n.tests && (
+        <div>
+          <dt>Tested with</dt>
+          <dd>{n.tests}</dd>
+        </div>
+      )
+    }
+    <div>
+      <dt>Runs on</dt>
+      <dd>{n.platforms}</dd>
+    </div>
+    <div>
+      <dt>When</dt>
+      <dd>{n.when}</dd>
+    </div>
+  </dl>
+</section>
+
+<style>
+  .notes {
+    width: 100%;
+  }
+  .eyebrow {
+    margin: 0 0 14px;
+    font: 400 12px/1 var(--mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  dl {
+    margin: 0;
+    display: grid;
+    gap: 14px;
+  }
+  dt {
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+  dd {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.45;
+  }
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .chips span {
+    padding: 4px 9px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    border: 1px solid;
+  }
+
+  .desk {
+    max-width: 300px;
+    color: var(--desk-ink);
+  }
+  .desk .eyebrow,
+  .desk dt {
+    color: var(--desk-ink-3);
+  }
+  .desk .chips {
+    justify-content: flex-end;
+  }
+  .desk .chips span {
+    border-color: var(--card-line);
+    background: var(--card);
+  }
+
+  .app .eyebrow,
+  .app dt {
+    color: var(--app-muted);
+  }
+  .app .chips span {
+    border-color: var(--app-line);
+  }
+
+  @media (max-width: 1099px) {
+    .desk {
+      max-width: none;
+    }
+    .desk .chips {
+      justify-content: flex-start;
+    }
+  }
+</style>

@@ -1,0 +1,105 @@
+/* Site tokens. Day is paper; night is lamp-lit. */
+:root {
+  --desk: #d9d1c1;
+  --desk-ink: #211d17;
+  --desk-ink-2: #4a4339;
+  --desk-ink-3: #7a7163;
+  --card: #f6f1e6;
+  --card-line: #cfc6b4;
+  --wall: #ede6d8;
+  --wall-ink: #211d17;
+  --wall-ink-2: #6b6255;
+  --wall-mark: #e4dccb;
+  --dock: rgba(33, 29, 23, 0.07);
+  --bezel: #121212;
+
+  --serif: 'Instrument Serif', Georgia, serif;
+  --ui: 'Inter Tight', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'Space Mono', ui-monospace, Consolas, monospace;
+
+  --ease-out: cubic-bezier(0.2, 0.9, 0.25, 1);
+  color-scheme: light;
+}
+
+:root[data-time='night'] {
+  --desk: #1d1a16;
+  --desk-ink: #efe7d8;
+  --desk-ink-2: #b9ae9c;
+  --desk-ink-3: #8a8072;
+  --card: #2a2620;
+  --card-line: #3b352d;
+  --wall: #26221d;
+  --wall-ink: #f1e9da;
+  --wall-ink-2: #a89e8e;
+  --wall-mark: #2d2923;
+  --dock: rgba(241, 233, 218, 0.07);
+  --bezel: #070707;
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--desk);
+  color: var(--desk-ink);
+  font-family: var(--ui);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  transition: background-color 0.5s ease;
+}
+
+a {
+  color: inherit;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* View-transition timing: a quick, settling morph like a real phone. */
+::view-transition-group(*) {
+  animation-duration: 0.48s;
+  animation-timing-function: var(--ease-out);
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.3s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 0.15s !important;
+  }
+}
+
+/* Dark icons need an edge on the lamp-lit wallpaper. */
+:root[data-time='night'] .ic {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12) !important;
+}

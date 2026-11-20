@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- The scorer itself: two sides of the net, in the side colours. -->
+  <rect width="512" height="512" rx="112" fill="#2D6CDF" />
+  <path d="M112 0H256V512H112A112 112 0 0 1 0 400V112A112 112 0 0 1 112 0Z" fill="#C4412A" />
+  <rect x="248" y="0" width="16" height="512" fill="#FFFFFF" />
+  <circle cx="256" cy="256" r="44" fill="#FFFFFF" />
+</svg>

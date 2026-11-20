@@ -1,0 +1,72 @@
+---
+import { SITE } from '../site';
+interface Props {
+  compact?: boolean;
+}
+const { compact = false } = Astro.props;
+---
+
+<div class:list={['card', { compact }]}>
+  <p class="eyebrow">Hello, I'm</p>
+  <p class="name">Abishek R<br /><i>Edakkalathur</i></p>
+  {!compact && <p class="bio">{SITE.bio}</p>}
+  <ul class="links">
+    <li><a href={SITE.github} rel="me">GitHub</a></li>
+    <li><a href={SITE.linkedin} rel="me">LinkedIn</a></li>
+    <li><a href={`mailto:${SITE.email}`}>Email</a></li>
+  </ul>
+</div>
+
+<style>
+  .card {
+    max-width: 280px;
+    padding: 22px 22px 20px;
+    background: var(--card);
+    border: 1px solid var(--card-line);
+    transform: rotate(-1.4deg);
+    color: var(--desk-ink);
+  }
+  .eyebrow {
+    margin: 0 0 10px;
+    font: 400 12px/1 var(--mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--desk-ink-3);
+  }
+  .name {
+    margin: 0;
+    font: 400 38px/0.95 var(--serif);
+    letter-spacing: -0.01em;
+  }
+  .compact .name {
+    font-size: 30px;
+  }
+  .bio {
+    margin: 14px 0 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--desk-ink-2);
+  }
+  .links {
+    display: flex;
+    gap: 14px;
+    margin: 16px 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: 13px;
+  }
+  .links a {
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+    color: var(--desk-ink-2);
+  }
+  .links a:hover {
+    color: var(--desk-ink);
+  }
+  @media (max-width: 1099px) {
+    .card {
+      transform: none;
+      max-width: none;
+    }
+  }
+</style>

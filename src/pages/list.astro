@@ -1,0 +1,74 @@
+---
+import Base from '../layouts/Base.astro';
+import AppShell from '../components/AppShell.astro';
+import AppIcon from '../components/AppIcon.astro';
+import IndexCard from '../components/IndexCard.astro';
+import { allProjects } from '../lib/projects';
+import { PAPER } from '../lib/paper';
+
+const projects = await allProjects();
+---
+
+<Base title="All projects · Abishek R Edakkalathur" description="Every project on one page." statusInk={PAPER.fg}>
+  <Fragment slot="left"><IndexCard /></Fragment>
+
+  <AppShell slug="list" theme={PAPER} label="All projects">
+    <h1>All projects</h1>
+    <ul>
+      {
+        projects.map((p) => (
+          <li>
+            <a href={`/${p.id}`}>
+              <AppIcon icon={p.data.icon} size={48} />
+              <span>
+                <b>{p.data.name}</b>
+                <small>{p.data.tagline}</small>
+                <small class="st">{p.data.status}</small>
+              </span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </AppShell>
+</Base>
+
+<style>
+  h1 {
+    margin: 4px 0 18px;
+    font: 400 38px/1 var(--serif);
+  }
+  ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  li + li {
+    border-top: 1px solid var(--app-line);
+  }
+  a {
+    display: flex;
+    gap: 14px;
+    padding: 14px 0;
+    color: var(--app-fg);
+    text-decoration: none;
+  }
+  b {
+    display: block;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  small {
+    display: block;
+    margin-top: 3px;
+    font-size: 13.5px;
+    line-height: 1.4;
+    color: var(--app-muted);
+  }
+  .st {
+    font: 400 11px/1.4 var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 6px;
+  }
+</style>

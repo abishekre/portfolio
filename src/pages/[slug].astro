@@ -1,0 +1,313 @@
+---
+import { render } from 'astro:content';
+import { Image } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import AppShell from '../components/AppShell.astro';
+import AppIcon from '../components/AppIcon.astro';
+import BuildNotes from '../components/BuildNotes.astro';
+import IndexCard from '../components/IndexCard.astro';
+import { allProjects, type Project } from '../lib/projects';
+
+export async function getStaticPaths() {
+  const list = await allProjects();
+  return list.map((project, i) => ({
+    params: { slug: project.id },
+    props: { project, prev: list[(i - 1 + list.length) % list.length], next: list[(i + 1) % list.length] },
+  }));
+}
+
+interface Props {
+  project: Project;
+  prev: Project;
+  next: Project;
+}
+const { project, prev, next } = Astro.props;
+const d = project.data;
+const { Content } = await render(project);
+---
+
+<Base
+  title={`${d.name} · Abishek R Edakkalathur`}
+  description={d.tagline}
+  fonts={d.theme.fonts}
+  tint={d.theme.bg}
+  statusInk={d.theme.fg}
+>
+  <Fragment slot="left">
+    <IndexCard compact />
+    <p class="kbd">Esc goes back to the home screen.</p>
+  </Fragment>
+
+  <AppShell slug={project.id} theme={d.theme} label={d.name}>
+    <header class="hero">
+      <AppIcon icon={d.icon} size={76} />
+      <h1>{d.name}</h1>
+      <p class="tagline">{d.tagline}</p>
+      <p class="status"><span class="dot"></span>{d.status}</p>
+    </header>
+
+    {
+      d.screens.length > 0 && (
+        <div class="screens" tabindex="0" aria-label={d.screensAlt ?? `${d.name} screenshots`}>
+          {d.screens.map((s, i) => (
+            <Image src={s} alt={`${d.name} screen ${i + 1}`} width={460} loading={i < 2 ? 'eager' : 'lazy'} />
+          ))}
+        </div>
+      )
+    }
+
+    <ul class="stats">
+      {
+        d.stats.map((s) => (
+          <li>
+            <span class="v">{s.value}</span>
+            <span class="l">{s.label}</span>
+          </li>
+        ))
+      }
+    </ul>
+
+    <section>
+      <h2 class="eyebrow">What it is</h2>
+      <p class="what">{d.what}</p>
+    </section>
+
+    <section class="hard">
+      <h2 class="eyebrow">The hard part</h2>
+      <p class="hard-title">{d.hardTitle}</p>
+      <div class="prose"><Content /></div>
+    </section>
+
+    {
+      d.links.length > 0 && (
+        <div class="links">
+          {d.links.map((l) => (
+            <a class:list={['btn', { primary: l.primary }]} href={l.href} target="_blank" rel="noopener">
+              {l.label}
+            </a>
+          ))}
+        </div>
+      )
+    }
+
+    <div class="in-app-notes">
+      <BuildNotes project={project} variant="app" />
+    </div>
+
+    <nav class="pn" aria-label="More projects">
+      <a href={`/${prev.id}`}>← {prev.data.label ?? prev.data.name}</a>
+      <a href={`/${next.id}`}>{next.data.label ?? next.data.name} →</a>
+    </nav>
+  </AppShell>
+
+  <Fragment slot="right">
+    <BuildNotes project={project} variant="desk" />
+    <div class="desk-links">
+      {
+        d.links.map((l) => (
+          <a href={l.href} target="_blank" rel="noopener">
+            {l.label} ↗
+          </a>
+        ))
+      }
+      <p class="next">Next on the phone: <a href={`/${next.id}`}>{next.data.name}</a></p>
+    </div>
+  </Fragment>
+</Base>
+
+<style>
+  .hero {
+    padding-top: 6px;
+  }
+  h1 {
+    margin: 18px 0 0;
+    font: 700 40px/1 var(--app-display);
+    letter-spacing: -0.03em;
+  }
+  .tagline {
+    margin: 10px 0 0;
+    font-size: 17px;
+    line-height: 1.45;
+    color: var(--app-fg);
+    opacity: 0.86;
+  }
+  .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 14px 0 0;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 500;
+    border: 1px solid var(--app-line);
+  }
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--app-accent);
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--app-fg) 25%, transparent);
+  }
+
+  .screens {
+    display: flex;
+    gap: 10px;
+    margin: 26px -22px 0;
+    padding: 0 22px 4px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding: 0 22px;
+    scrollbar-width: none;
+  }
+  .screens::-webkit-scrollbar {
+    display: none;
+  }
+  .screens :global(img) {
+    flex: none;
+    width: 200px;
+    height: auto;
+    border-radius: 16px;
+    scroll-snap-align: start;
+    border: 1px solid var(--app-line);
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin: 28px 0 0;
+    padding: 18px 0 0;
+    list-style: none;
+    border-top: 1px solid var(--app-line);
+  }
+  .stats li {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .v {
+    font: 700 26px/1 var(--app-display);
+    letter-spacing: -0.03em;
+    overflow-wrap: anywhere;
+  }
+  .l {
+    font-size: 12px;
+    line-height: 1.35;
+    color: var(--app-muted);
+  }
+
+  section {
+    margin-top: 30px;
+  }
+  .eyebrow {
+    margin: 0 0 10px;
+    font: 400 11.5px/1 var(--mono);
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--app-muted);
+  }
+  .what {
+    margin: 0;
+    font-size: 17px;
+    line-height: 1.55;
+  }
+  .hard {
+    padding-top: 24px;
+    border-top: 1px solid var(--app-line);
+  }
+  .hard-title {
+    margin: 0 0 12px;
+    font: 700 24px/1.12 var(--app-display);
+    letter-spacing: -0.02em;
+  }
+  .prose :global(p) {
+    margin: 0 0 12px;
+    font-size: 15px;
+    line-height: 1.6;
+    opacity: 0.92;
+  }
+
+  .links {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 26px;
+  }
+  .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 50px;
+    padding: 0 18px;
+    border-radius: 999px;
+    font-size: 15.5px;
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--app-fg);
+    border: 1px solid var(--app-line);
+  }
+  .btn.primary {
+    background: var(--app-accent);
+    color: var(--app-on-accent);
+    border-color: transparent;
+  }
+  .btn:active {
+    transform: scale(0.98);
+  }
+
+  .in-app-notes {
+    display: none;
+    margin-top: 34px;
+    padding-top: 22px;
+    border-top: 1px solid var(--app-line);
+  }
+
+  .pn {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 34px;
+    font-size: 14px;
+  }
+  .pn a {
+    color: var(--app-muted);
+    text-decoration: none;
+  }
+  .pn a:hover {
+    color: var(--app-fg);
+  }
+
+  /* Desk */
+  .kbd {
+    margin: 0;
+    font-size: 13px;
+    color: var(--desk-ink-3);
+  }
+  .desk-links {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    font-size: 14px;
+  }
+  .desk-links a {
+    color: var(--desk-ink);
+    text-underline-offset: 3px;
+  }
+  .next {
+    margin: 10px 0 0;
+    color: var(--desk-ink-3);
+    font-size: 13px;
+  }
+
+  @media (max-width: 1099px) {
+    .desk-links {
+      align-items: flex-start;
+    }
+  }
+  @media (max-width: 767px) {
+    .in-app-notes {
+      display: block;
+    }
+  }
+</style>
