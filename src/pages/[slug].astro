@@ -6,7 +6,8 @@ import AppShell from '../components/AppShell.astro';
 import AppIcon from '../components/AppIcon.astro';
 import BuildNotes from '../components/BuildNotes.astro';
 import IndexCard from '../components/IndexCard.astro';
-import { allProjects, isPlayStore, type Project } from '../lib/projects';
+import { allProjects, isPlayStore, ogImageFor, type Project } from '../lib/projects';
+import { SITE } from '../site';
 
 export async function getStaticPaths() {
   const list = await allProjects();
@@ -27,12 +28,12 @@ const { Content } = await render(project);
 ---
 
 <Base
-  title={`${d.name} · Abishek R Edakkalathur`}
+  title={`${d.name} · ${SITE.name}`}
   description={d.tagline}
   fonts={d.theme.fonts}
   tint={d.theme.bg}
   statusInk={d.theme.fg}
-  ogImage={`/og/${project.id}.png`}
+  ogImage={ogImageFor(project.id)}
 >
   <Fragment slot="left">
     <IndexCard compact />
@@ -41,16 +42,16 @@ const { Content } = await render(project);
 
   <AppShell slug={project.id} theme={d.theme} label={d.name}>
     <header class="hero">
-      <AppIcon icon={d.icon} size={76} />
+      <AppIcon icon={project.icon} size={76} />
       <h1>{d.name}</h1>
       <p class="tagline">{d.tagline}</p>
       <p class="status"><span class="dot"></span>{d.status}</p>
     </header>
 
     {
-      d.screens.length > 0 && (
+      project.screens.length > 0 && (
         <div class:list={['screens', { wide: d.screensWide }]} tabindex="0" aria-label={d.screensAlt ?? `${d.name} screenshots`}>
-          {d.screens.map((s, i) => (
+          {project.screens.map((s, i) => (
             <Image src={s} alt={`${d.name} screen ${i + 1}`} width={d.screensWide ? 700 : 460} loading={i < 2 ? 'eager' : 'lazy'} />
           ))}
         </div>

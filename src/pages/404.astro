@@ -1,9 +1,10 @@
 ---
 import Base from '../layouts/Base.astro';
 import IndexCard from '../components/IndexCard.astro';
+import { SITE } from '../site';
 ---
 
-<Base title="App not installed · Abishek R Edakkalathur" description="That page doesn't exist.">
+<Base title={`App not installed · ${SITE.name}`} description="That page doesn't exist.">
   <Fragment slot="left"><IndexCard /></Fragment>
   <main class="nf">
     <div class="ghost" aria-hidden="true"></div>

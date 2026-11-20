@@ -1,3 +1,4 @@
+// Saves into content/projects/<folder>/screens/. Screens show in filename order (1.png, 2.png, …), so rename to taste.
 // Screens from projects that only run locally. Start them first:
 //   Rally:           (Badminton tracker) npx vite --port 5191
 //   Silicon Streets: (silicon-streets)   npx vite preview --port 5192
@@ -10,7 +11,7 @@ const what = process.argv[2];
 const bodyText = async (p) => (await p.locator('body').innerText()).slice(0, 300).replace(/\n+/g, ' | ');
 
 if (!what || what === 'rally') {
-  const dir = 'src/assets/media/rally';
+  const dir = 'content/projects/rally/screens';
   await mkdir(dir, { recursive: true });
   const p = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
   await p.goto('http://localhost:5191', { waitUntil: 'networkidle' });
@@ -33,7 +34,7 @@ if (!what || what === 'rally') {
 }
 
 if (!what || what === 'streets') {
-  const dir = 'src/assets/media/streets';
+  const dir = 'content/projects/streets/screens';
   await mkdir(dir, { recursive: true });
   const p = await browser.newPage({ viewport: { width: 1280, height: 720 } });
   await p.goto('http://localhost:5192', { waitUntil: 'load' });

@@ -4,30 +4,17 @@ import AppShell from '../components/AppShell.astro';
 import IndexCard from '../components/IndexCard.astro';
 import DeskThings from '../components/DeskThings.astro';
 import { PAPER } from '../lib/paper';
-// TODO(Abishek): read the note below in your own voice and rewrite anything that isn't you.
+// The text lives in content/notes.md.
+import { Content } from '../../content/notes.md';
+import { SITE } from '../site';
 ---
 
-<Base title="Notes · Abishek R Edakkalathur" description="About Abishek, and how this site was made." tint="#EDB54A" statusInk={PAPER.fg}>
+<Base title={`Notes · ${SITE.name}`} description="About me, and how this site was made." tint="#EDB54A" statusInk={PAPER.fg}>
   <Fragment slot="left"><IndexCard compact /></Fragment>
 
   <AppShell slug="notes" theme={PAPER} label="Notes">
-    <p class="date">Notes · Kochi</p>
-    <h1>hi,</h1>
-    <p>I'm Abishek, an independent developer from Kerala.</p>
-    <p>
-      I build apps around how people here actually live: bank SMS and UPI, Malayalam, a sports hall with bad wifi, ten friends
-      splitting one dinner bill. Most of them work offline, keep your data on your phone, and come with more tests than they
-      strictly need.
-    </p>
-    <p>Everything on this phone is something I designed and built myself, except Dazzle Designs, which I made for a client.</p>
-
-    <h2>How this site was made</h2>
-    <p>
-      It's an Astro site pretending to be a phone. Each app opens in its own colours and fonts, taken from the real app. The
-      clock is Kochi time, and after 7 pm the wallpaper goes lamp-lit.
-    </p>
-    <p>On a phone there's no frame: the page is the home screen. Pull an app down to close it.</p>
-    <p>And if you press and hold any icon on the home screen, you'll find out I couldn't resist.</p>
+    <p class="date">Notes · {SITE.city}</p>
+    <div class="note"><Content /></div>
   </AppShell>
 
   <Fragment slot="right"><DeskThings thing="pen" /></Fragment>
@@ -41,15 +28,15 @@ import { PAPER } from '../lib/paper';
     text-transform: uppercase;
     color: var(--app-muted);
   }
-  h1 {
+  .note :global(h1) {
     margin: 18px 0 14px;
     font: italic 400 64px/0.9 var(--serif);
   }
-  h2 {
+  .note :global(h2) {
     margin: 32px 0 10px;
     font: 400 28px/1.05 var(--serif);
   }
-  p {
+  .note :global(p) {
     margin: 0 0 14px;
     font-size: 16px;
     line-height: 1.62;

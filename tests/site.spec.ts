@@ -2,10 +2,12 @@ import { test, expect, type Page } from '@playwright/test';
 import { readdirSync, readFileSync } from 'node:fs';
 
 // Every project, with its display name, read from the content files.
-const projects = readdirSync('src/content/projects').map((f) => {
-  const src = readFileSync(`src/content/projects/${f}`, 'utf8');
-  return { slug: f.replace(/\.md$/, ''), name: /^name: (.+)$/m.exec(src)![1].trim() };
-});
+const projects = readdirSync('content/projects')
+  .map((slug) => {
+    const src = readFileSync(`content/projects/${slug}/project.md`, 'utf8');
+    return { slug, name: /^name: (.+)$/m.exec(src)![1].trim(), hidden: /^hidden: true$/m.test(src) };
+  })
+  .filter((p) => !p.hidden);
 
 const isMobile = (page: Page) => (page.viewportSize()?.width ?? 0) < 768;
 

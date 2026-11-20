@@ -2,6 +2,7 @@
 // 1200×630 share card for each project. scripts/og.mjs screenshots these into public/og/.
 import { Image } from 'astro:assets';
 import { allProjects, type Project } from '../../lib/projects';
+import { SITE } from '../../site';
 
 export async function getStaticPaths() {
   return (await allProjects()).map((project) => ({ params: { slug: project.id }, props: { project } }));
@@ -9,7 +10,7 @@ export async function getStaticPaths() {
 const { project } = Astro.props as { project: Project };
 const d = project.data;
 const t = d.theme;
-const shot = d.screens[0];
+const shot = project.screens[0];
 const fonts =
   'https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=Space+Mono&' + (t.fonts ?? '') + '&display=swap';
 ---
@@ -25,10 +26,10 @@ const fonts =
   <body style={`--bg:${t.bg};--fg:${t.fg};--muted:${t.muted};--line:${t.line};--display:${t.display}`}>
     <main class:list={['card', { wide: d.screensWide }]}>
       <div class="text">
-        <Image src={d.icon} alt="" width={240} height={240} class="icon" />
+        <Image src={project.icon} alt="" width={240} height={240} class="icon" />
         <h1>{d.name}</h1>
         <p class="tag">{d.tagline}</p>
-        <p class="foot">abishekre.in · Abishek R Edakkalathur</p>
+        <p class="foot">abishekre.in · {SITE.name}</p>
       </div>
       {shot && <Image src={shot} alt="" width={900} class="shot" />}
     </main>

@@ -1,3 +1,4 @@
+// Saves into content/projects/<folder>/screens/. Screens show in filename order (1.png, 2.png, …), so rename to taste.
 // Kcal without an account: onboarding with sample numbers, then the dashboard and a food search.
 import { chromium } from 'playwright';
 const browser = await chromium.launch();
@@ -19,10 +20,10 @@ for (let i = 0; i < 8; i++) {
   const btn = p.getByText(/^(Continue|Next|Done|Start|Let's go|Get started|Finish|Start tracking|Start logging)$/i).last();
   if (!(await btn.count())) break;
   console.log('step', i, await text());
-  if ((await text()).includes('Your plan')) await p.screenshot({ path: 'src/assets/media/kcal/live-2.png' });
+  if ((await text()).includes('Your plan')) await p.screenshot({ path: 'content/projects/kcal/screens/live-2.png' });
   await btn.click().catch(() => {});
 }
 await p.waitForTimeout(3000);
-await p.screenshot({ path: 'src/assets/media/kcal/live-3.png' });
+await p.screenshot({ path: 'content/projects/kcal/screens/live-3.png' });
 console.log('end:', await text());
 await browser.close();

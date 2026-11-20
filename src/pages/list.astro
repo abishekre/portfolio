@@ -5,11 +5,12 @@ import AppIcon from '../components/AppIcon.astro';
 import IndexCard from '../components/IndexCard.astro';
 import { allProjects } from '../lib/projects';
 import { PAPER } from '../lib/paper';
+import { SITE } from '../site';
 
 const projects = await allProjects();
 ---
 
-<Base title="All projects · Abishek R Edakkalathur" description="Every project on one page." statusInk={PAPER.fg}>
+<Base title={`All projects · ${SITE.name}`} description="Every project on one page." statusInk={PAPER.fg}>
   <Fragment slot="left"><IndexCard /></Fragment>
 
   <AppShell slug="list" theme={PAPER} label="All projects">
@@ -19,7 +20,7 @@ const projects = await allProjects();
         projects.map((p) => (
           <li>
             <a href={`/${p.id}`}>
-              <AppIcon icon={p.data.icon} size={48} />
+              <AppIcon icon={p.icon} size={48} />
               <span>
                 <b>{p.data.name}</b>
                 <small>{p.data.tagline}</small>

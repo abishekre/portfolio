@@ -1,3 +1,4 @@
+// Saves into content/projects/<folder>/screens/. Screens show in filename order (1.png, 2.png, …), so rename to taste.
 // Screenshots of the live web builds at phone size. Nothing here writes to a server:
 // Kcal is used without an account (data stays in this throwaway browser).
 // Usage: node scripts/capture/live.mjs [slug]
@@ -38,7 +39,7 @@ const only = process.argv[2];
 const browser = await chromium.launch();
 for (const [slug, t] of Object.entries(targets)) {
   if (only && only !== slug) continue;
-  const dir = `src/assets/media/${slug}`;
+  const dir = `content/projects//screens${slug}`;
   await mkdir(dir, { recursive: true });
   const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
   try {

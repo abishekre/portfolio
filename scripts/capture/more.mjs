@@ -1,3 +1,4 @@
+// Saves into content/projects/<folder>/screens/. Screens show in filename order (1.png, 2.png, …), so rename to taste.
 // Extra screens from the live builds. Local-only interactions; nothing is submitted.
 // Usage: node scripts/capture/more.mjs
 import { chromium } from 'playwright';
@@ -24,7 +25,7 @@ await step('bytwo', async (p) => {
   for (const n of [2, 3]) {
     await p.getByText(/^next$/i).first().click();
     await p.waitForTimeout(2500);
-    await p.screenshot({ path: `src/assets/media/bytwo/live-${n}.png` });
+    await p.screenshot({ path: `content/projects/bytwo/screens/live-${n}.png` });
   }
 });
 
@@ -35,7 +36,7 @@ await step('deuce', async (p) => {
   const names = ['Ammu', 'Rahul', 'Sneha', 'Joel'];
   for (let i = 0; i < 4; i++) await p.getByPlaceholder(`Player ${i + 1}`).fill(names[i]);
   await p.waitForTimeout(500);
-  await p.screenshot({ path: 'src/assets/media/deuce/live-1.png' });
+  await p.screenshot({ path: 'content/projects/deuce/screens/live-1.png' });
 });
 
 // Kcal: through onboarding with the defaults, in this throwaway browser.
@@ -47,11 +48,11 @@ await step('kcal', async (p) => {
     await p.waitForTimeout(1800);
     const btn = p.getByText(/^(Continue|Next|Done|Start|Let's go|Get started|Finish)$/i).last();
     if (!(await btn.count())) break;
-    await p.screenshot({ path: `src/assets/media/kcal/step-${i}.png` });
+    await p.screenshot({ path: `content/projects/kcal/screens/step-${i}.png` });
     await btn.click().catch(() => {});
   }
   await p.waitForTimeout(3000);
-  await p.screenshot({ path: 'src/assets/media/kcal/live-2.png' });
+  await p.screenshot({ path: 'content/projects/kcal/screens/live-2.png' });
   console.log((await p.locator('body').innerText()).slice(0, 300).replace(/\n+/g, ' | '));
 });
 

@@ -4,11 +4,14 @@ interface Props {
   compact?: boolean;
 }
 const { compact = false } = Astro.props;
+// Last word of the name goes on its own line, in italics.
+const parts = SITE.name.trim().split(/\s+/);
+const last = parts.length > 1 ? parts.pop() : undefined;
 ---
 
 <div class:list={['card', { compact }]}>
   <p class="eyebrow">Hello, I'm</p>
-  <p class="name">Abishek R<br /><i>Edakkalathur</i></p>
+  <p class="name">{parts.join(' ')}{last && <><br /><i>{last}</i></>}</p>
   {!compact && <p class="bio">{SITE.bio}</p>}
   <ul class="links">
     <li><a href={SITE.github} rel="me">GitHub</a></li>

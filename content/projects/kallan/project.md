@@ -1,7 +1,6 @@
 ---
 name: Kallan
 order: 6
-icon: ../../assets/icons/kallan.png
 tagline: A Malayali pass-the-phone party game. Find the kallan before they find the word.
 status: Coming to Google Play
 theme:
@@ -20,8 +19,6 @@ stats:
   - { value: '3–20', label: players on one phone }
 what: Everyone gets the same word except the kallan. Take turns describing it, then vote. Kunjunni the mascot hosts, and the whole game works offline.
 hardTitle: One drawing, everywhere
-screens:
-  - ../../assets/media/kallan/feature-graphic.png
 screensAlt: Kallan's Play Store banner
 screensWide: true
 notes:

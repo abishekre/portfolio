@@ -1,7 +1,6 @@
 ---
 name: Tally
 order: 1
-icon: ../../assets/icons/tally.png
 tagline: An expense tracker that reads your bank SMS. No account, no server, no internet.
 status: On Google Play
 theme:
@@ -21,13 +20,6 @@ what: Tally opens straight onto a keypad, so logging a payment takes two taps. I
 hardTitle: Teaching a phone to read 17 banks
 links:
   - { label: Get it on Google Play, href: 'https://play.google.com/store/apps/details?id=app.tally.client', primary: true }
-screens:
-  - ../../assets/media/tally/screenshot-1.png
-  - ../../assets/media/tally/screenshot-2.png
-  - ../../assets/media/tally/screenshot-3.png
-  - ../../assets/media/tally/screenshot-4.png
-  - ../../assets/media/tally/screenshot-5.png
-  - ../../assets/media/tally/screenshot-6.png
 screensAlt: Tally's Play Store screenshots
 notes:
   stack: [Expo, React Native, TypeScript, Kotlin native module, SQLite, '@noble crypto']

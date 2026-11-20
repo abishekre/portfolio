@@ -1,7 +1,6 @@
 ---
 name: ByTwo
 order: 2
-icon: ../../assets/icons/bytwo.svg
 tagline: Split bills with friends and settle up over UPI. Encrypted before it leaves your phone.
 status: Live on the web
 theme:
@@ -22,10 +21,6 @@ what: An open-source Splitwise alternative made for India. Add a bill, see who o
 hardTitle: A ledger that can't disagree with itself
 links:
   - { label: Open bytwo.vercel.app, href: 'https://bytwo.vercel.app', primary: true }
-screens:
-  - ../../assets/media/bytwo/live-1.png
-  - ../../assets/media/bytwo/live-2.png
-  - ../../assets/media/bytwo/live-3.png
 screensAlt: ByTwo's welcome screens
 notes:
   stack: [Expo, React Native, TypeScript, Supabase, '@noble crypto', Playwright]

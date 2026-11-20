@@ -7,13 +7,15 @@ import DeskThings from '../components/DeskThings.astro';
 import { Image } from 'astro:assets';
 import { allProjects, counts } from '../lib/projects';
 import { SITE } from '../site';
-import streetsShot from '../assets/media/streets/screen-2.png';
 
 const projects = await allProjects();
 const c = counts(projects);
+const building = projects.find((p) => p.id === SITE.nowBuilding?.project);
+const photoOf = projects.find((p) => p.id === SITE.photo?.project);
+const photo = photoOf?.screens[(SITE.photo?.screen ?? 1) - 1];
 ---
 
-<Base title="Abishek R Edakkalathur" description={`${SITE.bio} Ten apps, from an SMS expense tracker to a 3D Bengaluru.`}>
+<Base title={SITE.name} description={`${SITE.bio} ${SITE.description}`.trim()}>
   <Fragment slot="left">
     <IndexCard />
     <DeskThings thing="chai" />
@@ -23,19 +25,23 @@ const c = counts(projects);
     <button class="done" type="button" data-done>Done</button>
     <header class="top">
       <div class="who">
-        <p class="who-name">Abishek R Edakkalathur</p>
+        <p class="who-name">{SITE.name}</p>
         <p class="who-bio">{SITE.bio}</p>
       </div>
-      <a class="widget" href="/deuce" aria-label="Now building: Deuce">
+      <a class="widget" href={building ? `/${building.id}` : '/notes'} aria-label={building ? `Now building: ${building.data.name}` : 'Notes'}>
         <span class="w-left">
           <span class="w-time" data-clock>9:41</span>
           <span class="w-place">{SITE.city} <span data-temp></span></span>
         </span>
-        <span class="w-right">
-          <span class="w-label">Now building</span>
-          <span class="w-what">Deuce</span>
-          <span class="w-sub">Google sign-in, then ratings</span>
-        </span>
+        {
+          building && (
+            <span class="w-right">
+              <span class="w-label">Now building</span>
+              <span class="w-what">{building.data.label ?? building.data.name}</span>
+              <span class="w-sub">{SITE.nowBuilding?.note}</span>
+            </span>
+          )
+        }
       </a>
     </header>
 
@@ -44,7 +50,7 @@ const c = counts(projects);
         projects.map((p) => (
           <li>
             <a class="app" href={`/${p.id}`} data-app>
-              <AppIcon icon={p.data.icon} morph={`app-${p.id}`} />
+              <AppIcon icon={p.icon} morph={`app-${p.id}`} />
               <span class="lbl">{p.data.label ?? p.data.name}</span>
             </a>
           </li>
@@ -58,13 +64,17 @@ const c = counts(projects);
       </li>
     </ul>
 
-    <a class="photo" href="/streets" aria-label="Photo: Silicon Streets, MG Road. Open Silicon Streets">
-      <Image src={streetsShot} alt="" width={700} />
-      <span class="photo-cap">
-        <span class="photo-app">Photos</span>
-        <span>MG Road, Bengaluru · 5:31 PM</span>
-      </span>
-    </a>
+    {
+      photoOf && photo && (
+        <a class="photo" href={`/${photoOf.id}`} aria-label={`Photo: ${photoOf.data.name}. Open ${photoOf.data.name}`}>
+          <Image src={photo} alt="" width={700} />
+          <span class="photo-cap">
+            <span class="photo-app">Photos</span>
+            <span>{SITE.photo?.caption}</span>
+          </span>
+        </a>
+      )
+    }
 
     <a class="all" href="/list">All projects as a list</a>
 

@@ -1,7 +1,6 @@
 ---
 name: Kcal
 order: 3
-icon: ../../assets/icons/kcal.png
 tagline: A calorie tracker that knows puttu, appam and Bangalore biryani.
 status: Live on the web and Android
 theme:
@@ -21,10 +20,6 @@ what: Most calorie apps think dinner is a burger. Kcal starts from what people i
 hardTitle: Numbers you can check
 links:
   - { label: Open kcal.abishekre.in, href: 'https://kcal.abishekre.in', primary: true }
-screens:
-  - ../../assets/media/kcal/live-3.png
-  - ../../assets/media/kcal/live-2.png
-  - ../../assets/media/kcal/live-1.png
 screensAlt: Kcal's today screen, plan and welcome
 notes:
   stack: [Expo, React Native, TypeScript, SQLite, Supabase, Zustand]

@@ -1,9 +1,10 @@
 // Renders share images into public/og/. Run with the dev server up: npm run dev, then npm run og.
+// Hidden projects get one too; it's harmless.
 import { chromium } from 'playwright';
 import { mkdir, readdir } from 'node:fs/promises';
 
 const base = process.env.OG_BASE ?? 'http://localhost:4321';
-const slugs = (await readdir('src/content/projects')).map((f) => f.replace(/\.md$/, ''));
+const slugs = (await readdir('content/projects', { withFileTypes: true })).filter((d) => d.isDirectory()).map((d) => d.name);
 await mkdir('public/og', { recursive: true });
 
 const browser = await chromium.launch();

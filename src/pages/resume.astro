@@ -10,15 +10,10 @@ import { SITE } from '../site';
 const projects = await allProjects();
 const hasPdf = fs.existsSync(new URL('../../public/resume.pdf', import.meta.url));
 
-const skills = [
-  ['Languages', 'TypeScript, JavaScript, Rust, Kotlin, Python, SQL'],
-  ['Apps', 'React Native and Expo, React, Next.js, Astro, Jetpack Compose'],
-  ['Data', 'Supabase and Postgres with row-level security, SQLite, offline sync'],
-  ['Also', 'Three.js, ffmpeg, Playwright, Vitest, property-based testing, GitHub Actions, Vercel'],
-];
+const skills = Object.entries(SITE.skills);
 ---
 
-<Base title="Résumé · Abishek R Edakkalathur" description={SITE.bio} statusInk={PAPER.fg} tint="#F6F1E6">
+<Base title={`Résumé · ${SITE.name}`} description={SITE.bio} statusInk={PAPER.fg} tint="#F6F1E6">
   <Fragment slot="left"><IndexCard compact /></Fragment>
 
   <AppShell slug="resume" theme={PAPER} label="Résumé">
@@ -60,7 +55,7 @@ const skills = [
     <h2>Contact</h2>
     <p class="contact">
       <a href={`mailto:${SITE.email}`}>{SITE.email}</a><br />
-      <a href={SITE.github}>github.com/abishekre</a><br />
+      <a href={SITE.github}>{SITE.github.replace(/^https?:\/\/(www\.)?/, '')}</a><br />
       <a href={SITE.linkedin}>LinkedIn</a>
     </p>
   </AppShell>

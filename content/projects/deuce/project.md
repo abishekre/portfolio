@@ -1,7 +1,6 @@
 ---
 name: Deuce
 order: 8
-icon: ../../assets/icons/deuce.svg
 tagline: The referee scores on a phone. The whole hall follows live.
 status: In beta
 theme:
@@ -20,8 +19,6 @@ what: "Tournament software for small badminton organisers. A referee taps point 
 hardTitle: "A score you can't corrupt"
 links:
   - { label: Open deuce-olive.vercel.app, href: 'https://deuce-olive.vercel.app', primary: true }
-screens:
-  - ../../assets/media/deuce/live-1.png
 screensAlt: Deuce's new-match screen
 notes:
   stack: [Expo, React Native Web, Supabase Realtime, TanStack Query, expo-sqlite, Workbox]

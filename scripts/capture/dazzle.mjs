@@ -1,8 +1,9 @@
+// Saves into content/projects/<folder>/screens/. Screens show in filename order (1.png, 2.png, …), so rename to taste.
 // Dazzle Designs, run locally: (Dazzle Design) npx next dev -p 5193
 // Only views pages; the quote form is never submitted.
 import { chromium } from 'playwright';
 import { mkdir } from 'node:fs/promises';
-const dir = 'src/assets/media/dazzle';
+const dir = 'content/projects/dazzle/screens';
 await mkdir(dir, { recursive: true });
 const browser = await chromium.launch();
 const p = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });

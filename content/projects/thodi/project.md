@@ -1,7 +1,6 @@
 ---
 name: Thodi
 order: 7
-icon: ../../assets/icons/thodi.svg
 tagline: Farmers sell straight to their neighbours. Malayalam first.
 status: Android, version 1.5
 theme:
@@ -21,11 +20,6 @@ what: "A marketplace for rural Kerala. Farmers list what they've grown, neighbou
 hardTitle: "Built for the people who'll use it"
 links:
   - { label: Open thodi.vercel.app, href: 'https://thodi.vercel.app', primary: true }
-screens:
-  - ../../assets/media/thodi/screen-1.png
-  - ../../assets/media/thodi/screen-2.png
-  - ../../assets/media/thodi/screen-4.png
-  - ../../assets/media/thodi/screen-5.png
 screensAlt: Thodi on Android
 notes:
   stack: [Expo, NativeWind, Reanimated, i18next, Supabase]
