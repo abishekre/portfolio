@@ -4,8 +4,10 @@ import AppIcon from '../components/AppIcon.astro';
 import DockIcon from '../components/DockIcon.astro';
 import IndexCard from '../components/IndexCard.astro';
 import DeskThings from '../components/DeskThings.astro';
+import { Image } from 'astro:assets';
 import { allProjects, counts } from '../lib/projects';
 import { SITE } from '../site';
+import streetsShot from '../assets/media/streets/screen-2.png';
 
 const projects = await allProjects();
 const c = counts(projects);
@@ -17,7 +19,8 @@ const c = counts(projects);
     <DeskThings thing="chai" />
   </Fragment>
 
-  <main class="home">
+  <main class="home" data-home>
+    <button class="done" type="button" data-done>Done</button>
     <header class="top">
       <div class="who">
         <p class="who-name">Abishek R Edakkalathur</p>
@@ -55,6 +58,14 @@ const c = counts(projects);
       </li>
     </ul>
 
+    <a class="photo" href="/streets" aria-label="Photo: Silicon Streets, MG Road. Open Silicon Streets">
+      <Image src={streetsShot} alt="" width={700} />
+      <span class="photo-cap">
+        <span class="photo-app">Photos</span>
+        <span>MG Road, Bengaluru · 5:31 PM</span>
+      </span>
+    </a>
+
     <a class="all" href="/list">All projects as a list</a>
 
     <nav class="dock" aria-label="Contact">
@@ -91,6 +102,47 @@ const c = counts(projects);
       if (!step) return;
       e.preventDefault();
       apps[Math.max(0, Math.min(apps.length - 1, i + step))].focus();
+    };
+
+    // Long-press any icon: jiggle mode. Done, Esc or a tap on the wallpaper ends it.
+    const home = document.querySelector<HTMLElement>('[data-home]')!;
+    let timer = 0;
+    let swallowClick = false;
+    const stop = () => home.classList.remove('jiggle');
+    grid.onpointerdown = (e) => {
+      if (!(e.target as HTMLElement).closest('[data-app]')) return;
+      timer = window.setTimeout(() => {
+        home.classList.add('jiggle');
+        swallowClick = true;
+        navigator.vibrate?.(12);
+      }, 550);
+    };
+    const cancel = () => clearTimeout(timer);
+    grid.onpointerup = cancel;
+    grid.onpointerleave = cancel;
+    grid.onpointermove = (e) => {
+      if (Math.abs(e.movementX) + Math.abs(e.movementY) > 6) cancel();
+    };
+    grid.oncontextmenu = (e) => {
+      if ((e.target as HTMLElement).closest('[data-app]')) e.preventDefault();
+    };
+    grid.addEventListener(
+      'click',
+      (e) => {
+        if (swallowClick || home.classList.contains('jiggle')) {
+          e.preventDefault();
+          e.stopPropagation();
+          swallowClick = false;
+        }
+      },
+      true,
+    );
+    home.querySelector<HTMLButtonElement>('[data-done]')!.onclick = stop;
+    home.onclick = (e) => {
+      if (home.classList.contains('jiggle') && !(e.target as HTMLElement).closest('[data-app], [data-done]')) stop();
+    };
+    document.onkeydown = (e) => {
+      if (e.key === 'Escape') stop();
     };
   }
   document.addEventListener('astro:page-load', init);
@@ -192,8 +244,47 @@ const c = counts(projects);
     letter-spacing: -0.005em;
   }
 
+  .photo {
+    position: relative;
+    display: block;
+    margin: 24px 20px 0;
+    height: 148px;
+    border-radius: 24px;
+    overflow: hidden;
+    color: #fff;
+    text-decoration: none;
+  }
+  .photo :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 62%;
+    transition: transform 0.6s var(--ease-out);
+  }
+  .photo:hover :global(img) {
+    transform: scale(1.03);
+  }
+  .photo-cap {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 28px 14px 11px;
+    font-size: 12px;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.55), transparent);
+  }
+  .photo-app {
+    font: 400 11px/1 var(--mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
   .all {
     margin: auto auto 14px;
+    padding-top: 14px;
     font-size: 12.5px;
     color: var(--wall-ink-2);
     text-underline-offset: 3px;
@@ -211,9 +302,63 @@ const c = counts(projects);
     border-radius: 16px;
   }
 
+  /* Long-press easter egg: the icons jiggle, like rearranging a real home screen. */
+  .done {
+    position: absolute;
+    top: 60px;
+    right: 18px;
+    z-index: 3;
+    display: none;
+    padding: 6px 14px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--wall-ink);
+    color: var(--wall);
+    font: 600 13px/1 var(--ui);
+    cursor: pointer;
+  }
+  .home.jiggle .done {
+    display: block;
+  }
+  .home.jiggle .app :global(.ic) {
+    animation: jig 0.26s ease-in-out infinite alternate;
+  }
+  .home.jiggle li:nth-child(odd) .app :global(.ic) {
+    animation-delay: -0.13s;
+  }
+  @keyframes jig {
+    from {
+      transform: rotate(-2.2deg);
+    }
+    to {
+      transform: rotate(2.2deg);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .home.jiggle .app :global(.ic) {
+      animation: none;
+      outline: 2px dashed var(--wall-ink-2);
+      outline-offset: 3px;
+    }
+  }
+
   @media (max-width: 767px) {
     .home {
       padding-top: calc(env(safe-area-inset-top) + 22px);
+      overflow-y: auto;
+    }
+    .done {
+      top: calc(env(safe-area-inset-top) + 16px);
+    }
+    .dock {
+      position: sticky;
+      bottom: calc(10px + env(safe-area-inset-bottom));
+      backdrop-filter: blur(12px);
+    }
+  }
+  @media (max-width: 767px) and (max-height: 899px) {
+    .photo {
+      display: none;
     }
     .who {
       display: block;

@@ -12,9 +12,11 @@ interface Props {
   tint?: string;
   /** Status-bar text colour inside the phone. */
   statusInk?: string;
+  /** Share image under public/, e.g. /og/tally.png. */
+  ogImage?: string;
 }
 
-const { title, description, fonts, tint, statusInk } = Astro.props;
+const { title, description, fonts, tint, statusInk, ogImage = '/og/home.png' } = Astro.props;
 const fontHref =
   'https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;600;700&family=Space+Mono:wght@400;700' +
   (fonts ? `&${fonts}` : '') +
@@ -33,6 +35,11 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content={new URL(ogImage, Astro.site)} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="theme-color" content="#d9d1c1" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />

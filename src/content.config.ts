@@ -35,6 +35,8 @@ const projects = defineCollection({
         .default([]),
       screens: z.array(image()).default([]),
       screensAlt: z.string().optional(),
+      // Landscape images (TV screens, banners) instead of phone screens.
+      screensWide: z.boolean().default(false),
       notes: z.object({
         stack: z.array(z.string()),
         tests: z.string().optional(),

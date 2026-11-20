@@ -5,12 +5,12 @@ icon: ../../assets/icons/rally.png
 tagline: Fair doubles rotations for a weekend badminton group.
 status: Installable web app
 theme:
-  bg: '#0F5C52'
-  fg: '#EBF1EC'
-  muted: '#A8C2BB'
-  accent: '#C98A1F'
-  onAccent: '#0F2A26'
-  line: '#1D6E63'
+  bg: '#EBF1EC'
+  fg: '#10231F'
+  muted: '#5C716B'
+  accent: '#0F5C52'
+  onAccent: '#EBF1EC'
+  line: '#D3DFD8'
   display: "'Barlow Semi Condensed', system-ui, sans-serif"
   fonts: family=Barlow+Semi+Condensed:wght@500;700
 stats:
@@ -19,6 +19,10 @@ stats:
   - { value: '0', label: servers. It works offline. }
 what: Twelve people, two courts, and someone always ends up partnering the same friend. Rally decides who plays next so everyone gets fair games and new partners.
 hardTitle: Fairness as a cost function
+screens:
+  - ../../assets/media/rally/screen-2.png
+  - ../../assets/media/rally/screen-1.png
+screensAlt: Rally's court and roster screens
 notes:
   stack: [React, Vite, TypeScript, Tailwind, Zustand, Framer Motion]
   tests: Vitest

@@ -20,6 +20,10 @@ stats:
   - { value: '3–20', label: players on one phone }
 what: Everyone gets the same word except the kallan. Take turns describing it, then vote. Kunjunni the mascot hosts, and the whole game works offline.
 hardTitle: One drawing, everywhere
+screens:
+  - ../../assets/media/kallan/feature-graphic.png
+screensAlt: Kallan's Play Store banner
+screensWide: true
 notes:
   stack: [Expo, React Native, Skia, Reanimated, Zustand]
   tests: Jest and fast-check

@@ -5,12 +5,12 @@ icon: ../../assets/icons/deuce.svg
 tagline: The referee scores on a phone. The whole hall follows live.
 status: In beta
 theme:
-  bg: '#0E1012'
-  fg: '#F3F1EB'
-  muted: '#8D9096'
-  accent: '#F2C230'
-  onAccent: '#0E1012'
-  line: '#24272C'
+  bg: '#F3F1EB'
+  fg: '#17191C'
+  muted: '#62656B'
+  accent: '#17191C'
+  onAccent: '#F3F1EB'
+  line: '#E0DDD3'
   display: "'Inter Tight', system-ui, sans-serif"
 stats:
   - { value: 'BWF', label: group standings, to the letter }
@@ -20,6 +20,9 @@ what: "Tournament software for small badminton organisers. A referee taps point 
 hardTitle: "A score you can't corrupt"
 links:
   - { label: Open deuce-olive.vercel.app, href: 'https://deuce-olive.vercel.app', primary: true }
+screens:
+  - ../../assets/media/deuce/live-1.png
+screensAlt: Deuce's new-match screen
 notes:
   stack: [Expo, React Native Web, Supabase Realtime, TanStack Query, expo-sqlite, Workbox]
   tests: Vitest with property-based tests

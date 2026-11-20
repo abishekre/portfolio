@@ -19,6 +19,13 @@ stats:
   - { value: '6', label: digit code to pair a TV }
 what: A lighter Plex for one house. The laptop runs a single Rust server, the TV runs a Compose app, and films play exactly as they were encoded.
 hardTitle: "Don't touch the film"
+screens:
+  - ../../assets/media/hearth/01-home.png
+  - ../../assets/media/hearth/02-title.png
+  - ../../assets/media/hearth/03-playing.png
+  - ../../assets/media/hearth/04-smart-rewind.png
+screensAlt: Hearth on a Google TV
+screensWide: true
 notes:
   stack: [Rust, axum, SQLite, ffmpeg, Kotlin, Compose for TV, Media3]
   tests: 221 server, 109 TV unit, 33 emulator end-to-end

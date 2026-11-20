@@ -5,12 +5,12 @@ icon: ../../assets/icons/kcal.png
 tagline: A calorie tracker that knows puttu, appam and Bangalore biryani.
 status: Live on the web and Android
 theme:
-  bg: '#0A0A0B'
-  fg: '#F2F2EE'
-  muted: '#8A8A85'
-  accent: '#D4FF3A'
-  onAccent: '#0A0A0B'
-  line: '#232326'
+  bg: '#F7F7F4'
+  fg: '#141414'
+  muted: '#66665F'
+  accent: '#5E7119'
+  onAccent: '#FFFFFF'
+  line: '#E3E3DC'
   display: "'Geist', system-ui, sans-serif"
   fonts: family=Geist:wght@400;500;600;700
 stats:
@@ -21,6 +21,11 @@ what: Most calorie apps think dinner is a burger. Kcal starts from what people i
 hardTitle: Numbers you can check
 links:
   - { label: Open kcal.abishekre.in, href: 'https://kcal.abishekre.in', primary: true }
+screens:
+  - ../../assets/media/kcal/live-3.png
+  - ../../assets/media/kcal/live-2.png
+  - ../../assets/media/kcal/live-1.png
+screensAlt: Kcal's today screen, plan and welcome
 notes:
   stack: [Expo, React Native, TypeScript, SQLite, Supabase, Zustand]
   tests: Vitest, including sync and colour-contrast tests

@@ -22,6 +22,11 @@ stats:
   - { value: '5', label: people sharing one admin }
 what: Dazzle Designs decorates weddings, communions and Onam celebrations around Houston. The site shows their work, takes quote requests and gives the team one place to manage leads.
 hardTitle: "Leads that don't get lost"
+screens:
+  - ../../assets/media/dazzle/screen-1.png
+  - ../../assets/media/dazzle/screen-portfolio.png
+  - ../../assets/media/dazzle/screen-quote.png
+screensAlt: The Dazzle Designs site on a phone
 notes:
   stack: [Next.js, Tailwind, Framer Motion, Supabase, Resend]
   platforms: Web
