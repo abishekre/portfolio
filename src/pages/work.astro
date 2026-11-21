@@ -2,7 +2,6 @@
 // The Work app: the day job. Everything comes from content/resume.yaml. Clients by industry only.
 import Base from '../layouts/Base.astro';
 import AppShell from '../components/AppShell.astro';
-import IndexCard from '../components/IndexCard.astro';
 import { SITE } from '../site';
 import { RESUME } from '../lib/resume';
 import { monthYear } from '../lib/yaml';
@@ -20,8 +19,7 @@ const span = (start: string, end?: string) => `${monthYear(start)} – ${end ? m
 const products = [...new Set(RESUME.clients.map((c) => c.product))];
 ---
 
-<Base title={`Work · ${SITE.name}`} description={`${RESUME.headline}. ${RESUME.summary}`} statusInk={THEME.fg} tint={THEME.bg}>
-  <Fragment slot="left"><IndexCard compact /></Fragment>
+<Base title={`Work · ${SITE.name}`} description={`${RESUME.headline}. ${RESUME.summary}`} statusInk={THEME.fg}>
 
   <AppShell slug="work" theme={THEME} label="Work">
     <p class="kicker">Day job</p>
@@ -115,9 +113,8 @@ const products = [...new Set(RESUME.clients.map((c) => c.product))];
 <style>
   .kicker {
     margin: 6px 0 0;
-    font: 400 11.5px/1 var(--mono);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    font: 600 12.5px/1 var(--sys);
+    letter-spacing: 0.01em;
     color: var(--app-accent);
   }
   h1 {
@@ -135,9 +132,8 @@ const products = [...new Set(RESUME.clients.map((c) => c.product))];
     margin: 30px 0 14px;
     padding-top: 18px;
     border-top: 1px solid var(--app-line);
-    font: 400 11.5px/1 var(--mono);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    font: 600 12.5px/1 var(--sys);
+    letter-spacing: 0.01em;
     color: var(--app-muted);
   }
   ol,
@@ -152,7 +148,7 @@ const products = [...new Set(RESUME.clients.map((c) => c.product))];
     gap: 26px;
   }
   .when {
-    font: 400 12px/1 var(--mono);
+    font: 500 12.5px/1 var(--sys);
     color: var(--app-muted);
   }
   .role {
@@ -227,7 +223,7 @@ const products = [...new Set(RESUME.clients.map((c) => c.product))];
   }
   .clients em {
     margin-top: 6px;
-    font: normal 400 11px/1 var(--mono);
+    font: 500 12.5px/1 var(--sys);
     letter-spacing: 0.04em;
     color: var(--app-accent);
   }

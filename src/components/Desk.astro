@@ -1,0 +1,55 @@
+---
+// The desk around the phone. Rendered once by Base.astro and persisted across every page change,
+// so nothing on it moves when an app opens. Only the clipboard turns its page.
+import IndexCard from './IndexCard.astro';
+import IdCard from './IdCard.astro';
+import Polaroid from './Polaroid.astro';
+import StickyNote from './StickyNote.astro';
+import Coffee from './Coffee.astro';
+import Clipboard from './Clipboard.astro';
+import Lamp from './Lamp.astro';
+import { allProjects } from '../lib/projects';
+import { HOME } from '../lib/home';
+import { RESUME } from '../lib/resume';
+import { SITE } from '../site';
+import { monthYear } from '../lib/yaml';
+import type { DeskSheet } from '../lib/sheet';
+
+interface Props {
+  sheet: DeskSheet;
+}
+const { sheet } = Astro.props;
+const projects = await allProjects();
+const building = projects.find((p) => p.id === HOME.nowBuilding?.app);
+const job = RESUME.experience[0];
+---
+
+<aside class="desk desk-l" aria-label="About" transition:persist="desk-l">
+  <IndexCard />
+  <IdCard title={`Day job · ${job.company}`} role={job.role} line={`Since ${monthYear(job.start)} · ${SITE.city}`} />
+  <Coffee />
+</aside>
+
+<aside class="desk desk-r" aria-label="Details" transition:persist="desk-r">
+  <Lamp />
+  <Clipboard sheet={sheet} />
+  <div class="desk-stack">
+    {
+      building?.screens[0] && (
+        <Polaroid image={building.screens[0]} name={building.data.name} caption={`${building.data.name}, on the bench`} back={HOME.nowBuilding?.note} href={`/${building.id}`} />
+      )
+    }
+    <StickyNote />
+  </div>
+</aside>
+
+<style>
+  .desk-stack {
+    display: flex;
+    align-items: flex-end;
+  }
+  .desk-stack > :global(.sticky) {
+    position: relative;
+    margin: 0 0 -18px -14px;
+  }
+</style>

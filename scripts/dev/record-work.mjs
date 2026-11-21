@@ -11,6 +11,6 @@ await p.tap('[data-dot="1"]');
 await p.waitForTimeout(900);
 await p.tap('a.app[href="/work"]');
 await p.waitForTimeout(1200);
-await p.tap('.back');
+await p.tap('.appview .back');
 await p.waitForTimeout(1200);
 await ctx.close(); await b.close();

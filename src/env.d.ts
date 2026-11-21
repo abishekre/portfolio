@@ -6,4 +6,13 @@ interface Window {
   __lock?: (instant?: boolean) => void;
   __unlock?: () => void;
   __tick?: () => void;
+  __theme?: {
+    mode: () => 'light' | 'dark' | 'auto';
+    isDark: () => boolean;
+    set: (mode: 'light' | 'dark' | 'auto', x?: number, y?: number) => void;
+    toggle: (x?: number, y?: number) => void;
+    calm: (on: boolean) => void;
+  };
+  __cc?: { open: () => void; close: () => void };
+  va?: (kind: 'event', data: { name: string }) => void;
 }

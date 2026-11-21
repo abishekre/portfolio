@@ -1,41 +1,78 @@
 ---
-// The lock screen: shown on a first visit to the home page, and whenever the Lock button is pressed.
-// Hidden in the HTML, so search engines and visitors without JavaScript get the home screen straight away.
-// Unlocks with a tap, Enter or Space, or a swipe up that starts mid-screen (never the bottom edge,
-// which belongs to the phone).
+// The lock screen. The wallpaper is Bengaluru at dusk, rendered in Silicon Streets
+// (scripts/capture/wallpaper.mjs); the clock sits behind the skyline (the city is cut out by
+// scripts/capture/wallpaper_mask.py and laid over it), like the depth effect on a real phone.
+// Shown on a first visit to the home page and from Control Center. Hidden in the HTML, so search
+// engines and visitors without JavaScript get the home screen straight away.
+// Unlocks with a tap, Enter or Space, or a swipe up that starts mid-screen (never the bottom edge).
+import { Image } from 'astro:assets';
+import wallpaper from '../assets/lock/wallpaper.webp';
+import city from '../assets/lock/city.webp';
+import DockIcon from './DockIcon.astro';
+import AppIcon from './AppIcon.astro';
 import { HOME } from '../lib/home';
-import { SITE } from '../site';
+import { allProjects } from '../lib/projects';
+import { VCARD_PATH } from '../lib/contact';
 
-const hrefFor = (app?: string) => (app ? `/${app}` : undefined);
+const projects = await allProjects();
+const system: Record<string, { kind: 'work' | 'wallet' | 'resume' | 'notes'; name: string }> = {
+  work: { kind: 'work', name: 'Work' },
+  wallet: { kind: 'wallet', name: 'Wallet' },
+  resume: { kind: 'resume', name: 'Résumé' },
+  notes: { kind: 'notes', name: 'Notes' },
+};
+// The newest three, like a phone's notification stack; the rest live in the apps.
+const notes = HOME.milestones.slice(0, 3).map((m) => {
+  const project = projects.find((p) => p.id === m.app);
+  return { ...m, project, sys: m.app ? system[m.app] : undefined, href: m.app ? `/${m.app}` : '/' };
+});
 ---
 
-<div class="lock" data-lock hidden role="dialog" aria-modal="true" aria-label="Lock screen">
-  <div class="lock-top">
-    <p class="lock-date" data-lock-date></p>
-    <p class="lock-time" data-clock></p>
-    <p class="lock-place">{SITE.city}</p>
+<div class="lock" data-lock hidden role="dialog" aria-modal="true" aria-label="Lock screen" tabindex="-1">
+  <Image class="wall" src={wallpaper} alt="" widths={[430, 860, 1290]} sizes="(max-width: 767px) 100vw, 390px" loading="eager" />
+
+  <div class="when" data-lock-clockwrap>
+    <p class="date" data-lock-date></p>
+    <p class="time" data-clock></p>
   </div>
+
+  <Image class="city" src={city} alt="" widths={[430, 860, 1290]} sizes="(max-width: 767px) 100vw, 390px" loading="eager" />
 
   <ul class="notes" aria-label="Notifications">
     {
-      HOME.milestones.map((m, i) => (
+      notes.map((m, i) => (
         <li style={`--i:${i}`}>
-          <a href={hrefFor(m.app) ?? '/'} data-lock-note>
-            <b>{m.title}</b>
-            <span>{m.text}</span>
+          <a href={m.href} data-lock-note>
+            <span class="n-icon">
+              {m.project ? <AppIcon icon={m.project.icon} size={38} /> : m.sys ? <DockIcon kind={m.sys.kind} size={38} /> : null}
+            </span>
+            <span class="n-body">
+              <b>{m.title}</b>
+              <span>{m.text}</span>
+            </span>
           </a>
         </li>
       ))
     }
-    <li style={`--i:${HOME.milestones.length}`} data-riddle>
+    <li style={`--i:${notes.length}`} data-riddle>
       <span class="riddle">
-        <b>Tip</b>
-        <span>Android people know how to turn on developer mode.</span>
+        <span class="n-body">
+          <b>Tip</b>
+          <span>Android people know how to turn on developer mode.</span>
+        </span>
       </span>
     </li>
   </ul>
 
-  <button class="open" type="button" data-unlock>Open</button>
+  <div class="bottom">
+    <button class="round" type="button" data-torch aria-label="Torch: switch light and dark">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2.5h8v4l-2 3v11a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-11l-2-3z"></path><path d="M12 12.5v2"></path></svg>
+    </button>
+    <button class="open" type="button" data-unlock>Swipe up to open</button>
+    <a class="round" href={VCARD_PATH} download="Abishek-R-Edakkalathur.vcf" aria-label="Save my contact card">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"></rect><circle cx="9" cy="11" r="2.2"></circle><path d="M5.8 16c.6-1.6 1.8-2.4 3.2-2.4s2.6.8 3.2 2.4M14.5 10h4M14.5 13h3"></path></svg>
+    </a>
+  </div>
 </div>
 
 <script is:inline>
@@ -65,8 +102,8 @@ const hrefFor = (app?: string) => (app ? `/${app}` : undefined);
       l.classList.remove('gone');
       requestAnimationFrame(function () {
         l.classList.add('on');
-        var b = l.querySelector('[data-unlock]');
-        b && b.focus({ preventScroll: true });
+        // Focus the screen itself (no ring), so Enter, Space and Esc work straight away.
+        l.focus({ preventScroll: true });
       });
     };
     window.__unlock = function () {
@@ -81,7 +118,7 @@ const hrefFor = (app?: string) => (app ? `/${app}` : undefined);
         l.classList.remove('gone');
         document.documentElement.classList.remove('unlocking');
         document.dispatchEvent(new CustomEvent('pf:unlocked'));
-      }, 520);
+      }, 560);
     };
     // First visit, landing on the home page itself: start locked, before the first paint.
     var seen = false;
@@ -99,10 +136,16 @@ const hrefFor = (app?: string) => (app ? `/${app}` : undefined);
     const unlock = () => window.__unlock?.();
 
     lock.querySelector('[data-unlock]')!.addEventListener('click', unlock);
-    lock.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') unlock();
+    lock.querySelector<HTMLButtonElement>('[data-torch]')!.addEventListener('click', (e) => {
+      const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      window.__theme?.toggle(r.left + r.width / 2, r.top + r.height / 2);
     });
-    // A notification opens its app (and unlocks for next time).
+    lock.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' || ((e.key === 'Enter' || e.key === ' ') && e.target === lock)) {
+        e.preventDefault();
+        unlock();
+      }
+    });
     lock.querySelectorAll<HTMLAnchorElement>('[data-lock-note]').forEach((a) =>
       a.addEventListener('click', () => {
         try {
@@ -111,38 +154,36 @@ const hrefFor = (app?: string) => (app ? `/${app}` : undefined);
       }),
     );
 
-    // Tap anywhere that isn't a notification, or swipe up from the middle of the screen.
+    // Tap anywhere that isn't a control, or swipe up from the middle of the screen.
     let y0 = 0;
     let dy = 0;
     let tracking = false;
     lock.addEventListener('pointerdown', (e) => {
       if ((e.target as HTMLElement).closest('a, button')) return;
       const r = lock.getBoundingClientRect();
-      // Leave the bottom edge to the phone's own home gesture.
-      if (e.clientY > r.bottom - 48) return;
+      if (e.clientY > r.bottom - 48) return; // the bottom edge belongs to the phone
       tracking = true;
       y0 = e.clientY;
       dy = 0;
-      lock.style.transition = 'none';
+      lock.classList.add('dragging');
     });
     lock.addEventListener('pointermove', (e) => {
       if (!tracking) return;
       dy = Math.min(0, e.clientY - y0);
-      lock.style.transform = `translateY(${dy * 0.9}px)`;
+      lock.style.setProperty('--drag', `${dy}px`);
     });
     const end = () => {
       if (!tracking) return;
       tracking = false;
-      lock.style.transition = '';
-      lock.style.transform = '';
-      // A tap (barely moved) or a real swipe up both unlock; a small drag springs back.
+      lock.classList.remove('dragging');
+      lock.style.removeProperty('--drag');
       if (dy > -8 || dy < -70) unlock();
     };
     lock.addEventListener('pointerup', end);
     lock.addEventListener('pointercancel', () => {
       tracking = false;
-      lock.style.transition = '';
-      lock.style.transform = '';
+      lock.classList.remove('dragging');
+      lock.style.removeProperty('--drag');
     });
   }
   document.addEventListener('astro:page-load', init);
@@ -150,55 +191,109 @@ const hrefFor = (app?: string) => (app ? `/${app}` : undefined);
 
 <style>
   .lock {
+    --drag: 0px;
     position: absolute;
     inset: 0;
     z-index: 15;
-    display: flex;
-    flex-direction: column;
-    padding: 70px 18px calc(26px + env(safe-area-inset-bottom));
-    color: #f6f1e6;
-    background:
-      radial-gradient(120% 70% at 20% 0%, #5b4a33 0%, transparent 60%),
-      radial-gradient(90% 60% at 100% 100%, #3a2c1d 0%, transparent 65%),
-      #17130e;
-    /* Vertical swipes here are ours; the page underneath isn't scrollable while locked. */
+    overflow: hidden;
+    color: #fff;
+    background: #3a2320;
     touch-action: none;
     user-select: none;
-    transform: translateY(0);
-    transition:
-      transform 0.52s cubic-bezier(0.32, 0.72, 0, 1),
-      opacity 0.4s ease;
+    font-family: 'Archivo', var(--ui);
   }
   .lock[hidden] {
     display: none;
   }
+  .lock:focus {
+    outline: none;
+  }
+  .wall,
+  .city {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 40%;
+    pointer-events: none;
+  }
+
+  /* Each layer moves at its own speed as the screen slides away: sky, clock, then city. */
+  .wall,
+  .when,
+  .city,
+  .notes,
+  .bottom {
+    transition:
+      transform 0.56s cubic-bezier(0.32, 0.72, 0, 1),
+      opacity 0.4s ease;
+  }
+  .wall {
+    transform: translateY(calc(var(--drag) * 0.5));
+  }
+  .when {
+    transform: translateY(calc(var(--drag) * 0.8));
+  }
+  .city,
+  .notes,
+  .bottom {
+    transform: translateY(var(--drag));
+  }
+  .lock:global(.dragging) * {
+    transition: none;
+  }
+  .lock:global(.gone) .wall {
+    transform: translateY(-35%);
+  }
+  .lock:global(.gone) .when {
+    transform: translateY(-70%);
+    opacity: 0;
+  }
+  .lock:global(.gone) .city,
+  .lock:global(.gone) .notes,
+  .lock:global(.gone) .bottom {
+    transform: translateY(-105%);
+  }
   .lock:global(.gone) {
-    transform: translateY(-104%);
-    opacity: 0.6;
+    pointer-events: none;
+    background: transparent;
   }
-  .lock-top {
+  .lock:global(.gone) .wall {
+    opacity: 0;
+  }
+
+  .when {
+    position: absolute;
+    left: 0;
+    right: 0;
+    /* Low enough that the nearer towers cover the foot of the digits. */
+    top: 31%;
     text-align: center;
+    text-shadow: 0 1px 12px rgba(80, 30, 20, 0.25);
   }
-  .lock-date {
+  .date {
     margin: 0;
-    font: 500 16px/1 var(--ui);
-    opacity: 0.85;
+    font: 600 17px/1 'Archivo', var(--ui);
+    font-stretch: 100%;
+    letter-spacing: 0.01em;
+    opacity: 0.92;
   }
-  .lock-time {
-    margin: 6px 0 0;
-    font: 400 96px/0.9 var(--serif);
-    letter-spacing: -0.02em;
-  }
-  .lock-place {
-    margin: 8px 0 0;
-    font: 400 11px/1 var(--mono);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    opacity: 0.6;
+  .time {
+    margin: 4px 0 0;
+    font: 800 128px/0.86 'Archivo', var(--ui);
+    font-stretch: 62%;
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+    color: rgba(255, 246, 236, 0.94);
   }
 
   .notes {
-    margin: auto 0 0;
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: calc(108px + env(safe-area-inset-bottom));
+    margin: 0;
     padding: 0;
     list-style: none;
     display: grid;
@@ -206,92 +301,138 @@ const hrefFor = (app?: string) => (app ? `/${app}` : undefined);
   }
   .notes a,
   .riddle {
-    display: block;
-    padding: 12px 14px;
-    border-radius: 20px;
-    background: rgba(246, 241, 230, 0.13);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
+    display: flex;
+    gap: 11px;
+    align-items: center;
+    padding: 11px 13px;
+    border-radius: 22px;
+    background: rgba(48, 26, 22, 0.38);
+    backdrop-filter: blur(22px) saturate(1.6);
+    -webkit-backdrop-filter: blur(22px) saturate(1.6);
+    box-shadow:
+      inset 0 0 0 0.5px rgba(255, 255, 255, 0.18),
+      0 8px 24px -12px rgba(0, 0, 0, 0.45);
     color: inherit;
     text-decoration: none;
   }
-  .notes b {
-    display: block;
-    font: 600 12px/1 var(--ui);
-    letter-spacing: 0.01em;
-    opacity: 0.7;
-  }
-  .notes span span,
-  .notes a span {
-    display: block;
-    margin-top: 4px;
-    font: 500 14.5px/1.35 var(--ui);
-  }
   .riddle {
-    background: rgba(246, 241, 230, 0.07);
+    background: rgba(48, 26, 22, 0.26);
+  }
+  .n-icon {
+    flex: none;
+  }
+  .n-icon :global(.ic) {
+    border-radius: 9px !important;
+  }
+  .n-body {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+  .n-body b {
+    font: 700 14px/1.2 'Archivo', var(--ui);
+  }
+  .n-body span {
+    font: 400 14px/1.3 var(--ui);
+    opacity: 0.92;
   }
   .notes li {
-    animation: note-in 0.5s cubic-bezier(0.32, 0.72, 0, 1) both;
-    animation-delay: calc(0.25s + var(--i) * 0.07s);
+    animation: note-in 0.55s cubic-bezier(0.32, 0.72, 0, 1) both;
+    animation-delay: calc(0.18s + var(--i) * 0.06s);
   }
   @keyframes note-in {
     from {
       opacity: 0;
-      transform: translateY(14px) scale(0.98);
+      transform: translateY(16px) scale(0.97);
     }
   }
 
-  .open {
-    align-self: center;
-    margin-top: 18px;
-    padding: 11px 26px;
+  .bottom {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: calc(22px + env(safe-area-inset-bottom));
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 0 40px;
+  }
+  .round {
+    display: grid;
+    place-items: center;
+    width: 50px;
+    height: 50px;
+    padding: 0;
     border: 0;
-    border-radius: 999px;
-    background: rgba(246, 241, 230, 0.16);
-    color: inherit;
-    font: 600 14px/1 var(--ui);
-    letter-spacing: 0.02em;
+    border-radius: 50%;
+    background: rgba(40, 22, 20, 0.42);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    color: #fff;
     cursor: pointer;
   }
-  .open::after {
-    content: '';
-    display: block;
-    width: 120px;
-    height: 5px;
-    margin: 14px auto -2px;
-    border-radius: 3px;
-    background: currentColor;
-    opacity: 0.8;
+  .round svg {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+  }
+  .round:active {
+    transform: scale(0.92);
+    background: rgba(255, 255, 255, 0.85);
+    color: #2a1a16;
   }
   .open {
     display: flex;
     flex-direction: column;
     align-items: center;
+    padding: 0 0 2px;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: 600 13px/1 'Archivo', var(--ui);
+    letter-spacing: 0.01em;
+    opacity: 0.9;
+    cursor: pointer;
+  }
+  .open::after {
+    content: '';
+    display: block;
+    width: 134px;
+    height: 5px;
+    margin-top: 14px;
+    border-radius: 3px;
+    background: #fff;
   }
 
   @media (max-width: 767px) {
     .lock {
       position: fixed;
-      padding-top: calc(env(safe-area-inset-top) + 48px);
     }
   }
-  @media (max-height: 700px) {
-    .lock-time {
-      font-size: 76px;
-    }
+  @media (max-height: 760px) {
     .notes li:nth-child(n + 3):not([data-riddle]) {
       display: none;
     }
+    .time {
+      font-size: 104px;
+    }
   }
   @media (prefers-reduced-motion: reduce) {
-    .lock,
+    .lock *,
     .notes li {
-      transition: opacity 0.2s ease;
       animation: none;
+      transition: opacity 0.2s ease;
+    }
+    .lock:global(.gone) * {
+      transform: none !important;
     }
     .lock:global(.gone) {
-      transform: none;
       opacity: 0;
+      transition: opacity 0.2s ease;
     }
   }
 </style>

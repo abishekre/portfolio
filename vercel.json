@@ -9,5 +9,20 @@
       "destination": "/lumen",
       "permanent": true
     }
+  ],
+  "headers": [
+    {
+      "source": "/abishek.vcf",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/vcard; charset=utf-8"
+        },
+        {
+          "key": "Content-Disposition",
+          "value": "inline; filename=\"Abishek-R-Edakkalathur.vcf\""
+        }
+      ]
+    }
   ]
 }

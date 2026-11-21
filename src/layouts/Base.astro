@@ -2,7 +2,13 @@
 import { ClientRouter } from 'astro:transitions';
 import StatusBar from '../components/StatusBar.astro';
 import Toast from '../components/Toast.astro';
-import Coffee from '../components/Coffee.astro';
+import Desk from '../components/Desk.astro';
+import DeskSheet from '../components/DeskSheet.astro';
+import ControlCenter from '../components/ControlCenter.astro';
+import { homeSheet, type DeskSheet as Sheet } from '../lib/sheet';
+import { allProjects } from '../lib/projects';
+import { RESUME } from '../lib/resume';
+import { SITE } from '../site';
 import '../styles/global.css';
 
 interface Props {
@@ -10,20 +16,37 @@ interface Props {
   description: string;
   /** Extra Google Fonts `family=` params for this page. */
   fonts?: string;
-  /** Colour the desk leans toward while this page is open. */
-  tint?: string;
+  /** What the clipboard on the desk shows for this page; the home summary if not given. */
+  sheet?: Sheet;
   /** Status-bar text colour inside the phone. */
   statusInk?: string;
   /** Share image under public/, e.g. /og/tally.png. */
   ogImage?: string;
 }
 
-const { title, description, fonts, tint, statusInk, ogImage = '/og/home.png' } = Astro.props;
+const { title, description, fonts, statusInk, ogImage = '/og/home.png' } = Astro.props;
+const sheet = Astro.props.sheet ?? homeSheet(await allProjects());
 const fontHref =
-  'https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;600;700&family=Space+Mono:wght@400;700' +
+  'https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;600;700&family=Space+Mono:wght@400;700&family=Archivo:wdth,wght@62..125,400..900&family=Kalam' +
   (fonts ? `&${fonts}` : '') +
   '&display=fallback';
 const canonical = new URL(Astro.url.pathname, Astro.site);
+
+// Who this site is about, for search engines (schema.org Person).
+const job = RESUME.experience[0];
+const person = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: SITE.name,
+  url: 'https://www.abishekre.in',
+  email: `mailto:${SITE.email}`,
+  jobTitle: job?.role,
+  worksFor: job ? { '@type': 'Organization', name: job.company } : undefined,
+  alumniOf: RESUME.education.map((e) => ({ '@type': 'CollegeOrUniversity', name: e.school })),
+  homeLocation: { '@type': 'Place', name: SITE.city },
+  sameAs: [SITE.github, SITE.linkedin],
+  knowsAbout: RESUME.skills.flatMap((s) => s.items.split(',').map((x) => x.trim())).slice(0, 20),
+};
 ---
 
 <!doctype html>
@@ -55,11 +78,25 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
             new Intl.DateTimeFormat('en-GB', { hour: 'numeric', hourCycle: 'h23', timeZone: 'Asia/Kolkata' }).format(new Date()),
           );
         }
+        function stored(key, fallback) {
+          try {
+            return localStorage.getItem(key) || fallback;
+          } catch (e) {
+            return fallback;
+          }
+        }
+        // Theme: Light, Dark, or Auto (evening in India, or the system's dark mode). Chosen with the
+        // desk lamp, Control Center or the lock-screen torch; remembered in localStorage.
         function apply() {
           var root = document.documentElement;
+          var mode = stored('pf-theme', 'auto');
           var h = istHour();
-          var dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          root.dataset.time = dark || h < 6 || h >= 19 ? 'night' : 'day';
+          var sysDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var dark = mode === 'dark' || (mode === 'auto' && (sysDark || h < 6 || h >= 19));
+          root.dataset.time = dark ? 'night' : 'day';
+          root.dataset.themeMode = mode;
+          if (stored('pf-calm', '') === '1') root.dataset.calm = '1';
+          else delete root.dataset.calm;
           var z = innerWidth < 768 ? 1 : Math.min(1, (innerHeight - 56) / 866);
           root.style.setProperty('--z', z.toFixed(4));
         }
@@ -101,8 +138,47 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
           }
           setVt();
         });
+        window.__theme = {
+          mode: function () {
+            return stored('pf-theme', 'auto');
+          },
+          isDark: function () {
+            return document.documentElement.dataset.time === 'night';
+          },
+          // Switch, with the new look spreading out in a circle from (x, y) when it can.
+          set: function (mode, x, y) {
+            try {
+              localStorage.setItem('pf-theme', mode);
+            } catch (e) {}
+            var root = document.documentElement;
+            var calm = root.dataset.calm === '1' || matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (!document.startViewTransition || calm) {
+              apply();
+              document.dispatchEvent(new CustomEvent('pf:theme'));
+              return;
+            }
+            root.style.setProperty('--vt-x', (x == null ? innerWidth / 2 : x) + 'px');
+            root.style.setProperty('--vt-y', (y == null ? 0 : y) + 'px');
+            root.dataset.vt = 'theme';
+            var t = document.startViewTransition(apply);
+            t.finished.finally(function () {
+              if (root.dataset.vt === 'theme') delete root.dataset.vt;
+              document.dispatchEvent(new CustomEvent('pf:theme'));
+            });
+          },
+          toggle: function (x, y) {
+            this.set(this.isDark() ? 'light' : 'dark', x, y);
+          },
+          calm: function (on) {
+            try {
+              localStorage.setItem('pf-calm', on ? '1' : '');
+            } catch (e) {}
+            apply();
+          },
+        };
         apply();
         addEventListener('resize', apply);
+        matchMedia('(prefers-color-scheme: dark)').addEventListener('change', apply);
         document.addEventListener('astro:after-swap', function () {
           apply();
           if (vt === 'close') {
@@ -125,25 +201,34 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
         });
       })();
     </script>
+    <script type="application/ld+json" set:html={JSON.stringify(person)} />
+    {
+      import.meta.env.PROD && (
+        <>
+          <script is:inline>
+            // Vercel Web Analytics: cookie-less visit counts, plus a few named events (résumé, contact card).
+            window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+          </script>
+          <script is:inline defer src="/_vercel/insights/script.js"></script>
+        </>
+      )
+    }
     <ClientRouter fallback="swap" />
   </head>
   <body>
-    <div class="stage" style={tint ? `--tint:${tint}` : undefined}>
-      <aside class="desk desk-l" aria-label="About">
-        <slot name="left" />
-        <Coffee />
-      </aside>
+    <div class="stage">
+      <Desk sheet={sheet} />
       <div class="phone">
         <div class="screen" style={statusInk ? `--sb:${statusInk}` : undefined}>
           <StatusBar />
           <slot />
+          <ControlCenter />
           <Toast />
         </div>
       </div>
-      <aside class="desk desk-r" aria-label="Details">
-        <slot name="right" />
-      </aside>
     </div>
+    <!-- This page's sheet for the clipboard on the desk (which persists between pages). -->
+    <template id="desk-sheet"><DeskSheet sheet={sheet} /></template>
     <!-- Real time in every clock before the first paint, not a 9:41 placeholder. -->
     <script is:inline>window.__tick && window.__tick();</script>
     {
@@ -151,6 +236,16 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
         <script is:inline>
           // Works offline after one visit (public/sw.js).
           if ('serviceWorker' in navigator) addEventListener('load', function () { navigator.serviceWorker.register('/sw.js').catch(function () {}); });
+          // Leads: count résumé and contact-card downloads, and notes sent from the desk.
+          document.addEventListener('click', function (e) {
+            var a = e.target.closest && e.target.closest('a[href]');
+            if (!a || !window.va) return;
+            var h = a.getAttribute('href') || '';
+            if (h.indexOf('.vcf') >= 0) window.va('event', { name: 'Saved contact card' });
+            else if (h.indexOf('resume.pdf') >= 0) window.va('event', { name: 'Downloaded résumé' });
+            else if (h.indexOf('mailto:') === 0) window.va('event', { name: 'Started an email' });
+            else if (h.indexOf('linkedin.com') >= 0) window.va('event', { name: 'Opened LinkedIn' });
+          });
         </script>
       )
     }
@@ -165,24 +260,30 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     align-items: stretch;
     gap: clamp(28px, 4vw, 80px);
     padding: 28px clamp(28px, 4vw, 72px);
-    background: var(--desk);
-    transition: background-color 0.5s ease;
+    /* A real surface: fine paper grain, and a soft fall-off of light towards the edges. */
+    background:
+      radial-gradient(130% 100% at 50% 40%, transparent 55%, rgba(30, 20, 10, 0.14)),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.35 0 0 0 0 0.3 0 0 0 0 0.22 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+      var(--desk);
     /* Things on the desk may run off its edge (the coffee does). */
     overflow: clip;
   }
-  .stage[style*='--tint'] {
-    background: color-mix(in oklab, var(--desk) 86%, var(--tint));
-  }
-
-  /* Separate layers for page changes: the screen (see global.css), and each side of the desk. */
-  .screen {
-    view-transition-name: screen;
-  }
   .desk-l {
-    view-transition-name: desk-l;
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .phone {
+    grid-column: 2;
+    grid-row: 1;
   }
   .desk-r {
-    view-transition-name: desk-r;
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  /* The phone's screen is its own layer for page changes (see global.css); the desk is not, so it never moves. */
+  .screen {
+    view-transition-name: screen;
   }
 
   .desk {
@@ -193,9 +294,13 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     min-width: 0;
     padding: 12px 0;
   }
+  .desk-l {
+    position: relative;
+    justify-content: flex-start;
+  }
   .desk-r {
+    position: relative;
     align-items: flex-end;
-    text-align: right;
   }
 
   .phone {

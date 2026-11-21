@@ -3,7 +3,6 @@
 import fs from 'node:fs';
 import Base from '../layouts/Base.astro';
 import AppShell from '../components/AppShell.astro';
-import IndexCard from '../components/IndexCard.astro';
 import { allProjects } from '../lib/projects';
 import { PAPER } from '../lib/paper';
 import { SITE } from '../site';
@@ -15,8 +14,7 @@ const hasPdf = fs.existsSync('public/resume.pdf');
 const span = (start: string, end?: string) => `${monthYear(start)} – ${end ? monthYear(end) : 'now'}`;
 ---
 
-<Base title={`Résumé · ${SITE.name}`} description={`${RESUME.headline}. ${SITE.bio}`} statusInk={PAPER.fg} tint="#F6F1E6">
-  <Fragment slot="left"><IndexCard compact /></Fragment>
+<Base title={`Résumé · ${SITE.name}`} description={`${RESUME.headline}. ${SITE.bio}`} statusInk={PAPER.fg}>
 
   <AppShell slug="resume" theme={PAPER} label="Résumé">
     <h1>{SITE.name}</h1>
@@ -153,9 +151,8 @@ const span = (start: string, end?: string) => `${monthYear(start)} – ${end ? m
     margin: 30px 0 12px;
     padding-top: 18px;
     border-top: 1px solid var(--app-line);
-    font: 400 11.5px/1 var(--mono);
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
+    font: 600 12.5px/1 var(--sys);
+    letter-spacing: 0.01em;
     color: var(--app-muted);
   }
   ol,

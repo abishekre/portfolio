@@ -1,0 +1,296 @@
+---
+// The day-job ID on a lanyard. It hangs from the top of its strap like a pendulum: moving the mouse
+// across it nudges it, you can drag it to swing, and it settles. Click it to turn it over: the back
+// has a QR code and a button to save the contact card (/abishek.vcf), and the résumé.
+import { qrSvg, VCARD_PATH } from '../lib/contact';
+import { SITE } from '../site';
+interface Props {
+  title: string;
+  role: string;
+  line: string;
+}
+const { title, role, line } = Astro.props;
+const qr = await qrSvg();
+---
+
+<div class="lanyard" data-lanyard>
+  <span class="strap" aria-hidden="true"></span>
+  <div class="card" data-idcard>
+    <div class="face front">
+      <span class="clip" aria-hidden="true"></span>
+      <span class="band">{title}</span>
+      <span class="role">{role}</span>
+      <span class="line">{line}</span>
+      <span class="code" aria-hidden="true"></span>
+      <button class="turn" type="button" data-turn aria-label="Turn the ID card over for contact details">Turn over</button>
+    </div>
+    <div class="face back" aria-hidden="true" inert>
+      <span class="clip" aria-hidden="true"></span>
+      <span class="qr" set:html={qr} role="img" aria-label="QR code that opens the contact card"></span>
+      <span class="scan">Scan to save my contact</span>
+      <span class="acts">
+        <a class="save" href={VCARD_PATH} download="Abishek-R-Edakkalathur.vcf" data-save-contact>Save contact</a>
+        <a class="cv" href={SITE.resumePdf} download="Abishek-R-Edakkalathur-resume.pdf">Résumé</a>
+      </span>
+      <button class="turn" type="button" data-turn aria-label="Turn the ID card back over">Turn back</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  import { Spring, calm } from '../lib/spring';
+
+  function init() {
+    const lanyard = document.querySelector<HTMLElement>('[data-lanyard]');
+    if (!lanyard || lanyard.dataset.ready) return;
+    lanyard.dataset.ready = '1';
+    const card = lanyard.querySelector<HTMLElement>('[data-idcard]')!;
+    const front = card.querySelector<HTMLElement>('.front')!;
+    const back = card.querySelector<HTMLElement>('.back')!;
+
+    // Swing: angle in degrees around the top of the strap.
+    const swing = new Spring({
+      stiffness: 26,
+      damping: 2.2,
+      onUpdate: (a) => lanyard.style.setProperty('--a', `${a.toFixed(3)}deg`),
+    });
+
+    // A cursor passing over the card nudges it the way it's moving.
+    let lastX = 0;
+    let lastT = 0;
+    lanyard.addEventListener('pointermove', (e) => {
+      if (dragging || calm() || e.pointerType !== 'mouse') return;
+      const now = performance.now();
+      if (lastT && now - lastT < 80) {
+        const vx = (e.clientX - lastX) / Math.max(8, now - lastT);
+        swing.kick(Math.max(-40, Math.min(40, vx * 18)));
+      }
+      lastX = e.clientX;
+      lastT = now;
+    });
+    lanyard.addEventListener('pointerleave', () => (lastT = 0));
+
+    // Drag to swing: the angle follows the pointer around the pivot; let go and it swings back.
+    let dragging = false;
+    let moved = 0;
+    let prevA = 0;
+    let vel = 0;
+    let downAt = 0;
+    const pivot = () => {
+      const r = lanyard.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top - 120 };
+    };
+    card.addEventListener('pointerdown', (e) => {
+      if ((e.target as HTMLElement).closest('a')) return;
+      dragging = true;
+      moved = 0;
+      vel = 0;
+      downAt = e.clientX;
+      prevA = swing.value;
+      swing.stop();
+      card.setPointerCapture(e.pointerId);
+    });
+    card.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      moved = Math.max(moved, Math.abs(e.clientX - downAt));
+      if (moved < 4 || calm()) return;
+      const p = pivot();
+      const a = Math.max(-38, Math.min(38, (Math.atan2(e.clientX - p.x, e.clientY - p.y) * 180) / Math.PI));
+      vel = (a - prevA) * 60;
+      prevA = a;
+      swing.set(a);
+    });
+    const release = () => {
+      if (!dragging) return;
+      dragging = false;
+      if (moved >= 4) {
+        swing.kick(vel);
+        swing.to(0);
+      }
+    };
+    card.addEventListener('pointerup', release);
+    card.addEventListener('pointercancel', release);
+
+    // Turn over: a click anywhere on the card (not on a link), or the Turn buttons.
+    const turn = () => {
+      const flipped = card.classList.toggle('flipped');
+      front.toggleAttribute('inert', flipped);
+      back.toggleAttribute('inert', !flipped);
+      front.setAttribute('aria-hidden', String(flipped));
+      back.setAttribute('aria-hidden', String(!flipped));
+      if (!calm()) swing.kick(flipped ? 30 : -30);
+      (flipped ? back : front).querySelector<HTMLElement>('[data-turn]')?.focus({ preventScroll: true });
+    };
+    card.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).closest('a') || moved >= 4) return;
+      turn();
+    });
+    card.querySelectorAll('[data-turn]').forEach((b) =>
+      b.addEventListener('click', (e) => {
+        e.stopPropagation();
+        turn();
+      }),
+    );
+    card.querySelector('[data-save-contact]')?.addEventListener('click', () => window.__toast?.('Saved. Talk soon.'));
+  }
+  document.addEventListener('astro:page-load', init);
+</script>
+
+<style>
+  .lanyard {
+    --a: 0deg;
+    position: relative;
+    width: 200px;
+    margin: 118px 0 0 34px;
+    transform: rotate(var(--a));
+    transform-origin: 50% -120px;
+    will-change: transform;
+  }
+  .strap {
+    position: absolute;
+    left: 50%;
+    bottom: 100%;
+    width: 22px;
+    height: 140px;
+    margin: 0 0 -6px -11px;
+    background: repeating-linear-gradient(0deg, #0b3b6e 0 6px, #0d4580 6px 7px);
+    box-shadow: 0 6px 12px -6px rgba(0, 0, 0, 0.4);
+  }
+  .card {
+    position: relative;
+    display: grid;
+    transform-style: preserve-3d;
+    transition: transform 0.7s cubic-bezier(0.32, 0.72, 0, 1);
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+  }
+  .card:active {
+    cursor: grabbing;
+  }
+  .card:global(.flipped) {
+    transform: rotateY(180deg);
+  }
+  .face {
+    grid-area: 1 / 1;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: 0 0 14px;
+    border-radius: 12px;
+    background: #fbfaf7;
+    color: #1d1a16;
+    box-shadow: var(--paper-shadow);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+  .back {
+    position: absolute;
+    inset: 0;
+    transform: rotateY(180deg);
+    align-items: center;
+    justify-content: center;
+    padding: 18px 14px 10px;
+    text-align: center;
+  }
+  .clip {
+    position: absolute;
+    left: 50%;
+    top: -12px;
+    width: 30px;
+    height: 18px;
+    margin-left: -15px;
+    border-radius: 4px;
+    background: linear-gradient(#d9d9d6, #a9a9a5);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+  .band {
+    padding: 22px 16px 12px;
+    border-radius: 12px 12px 0 0;
+    background: #0b3b6e;
+    color: #f4f0e8;
+    font: 600 11px/1.2 'Archivo', var(--ui);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .role {
+    padding: 14px 16px 0;
+    font: 400 24px/1.02 var(--serif);
+  }
+  .line {
+    padding: 8px 16px 0;
+    font-size: 12.5px;
+    color: #6f675b;
+  }
+  .code {
+    height: 18px;
+    margin: 14px 16px 0;
+    background: repeating-linear-gradient(90deg, #1d1a16 0 2px, transparent 2px 4px, #1d1a16 4px 5px, transparent 5px 8px);
+    opacity: 0.75;
+  }
+  .turn {
+    align-self: flex-end;
+    margin: 10px 12px 0 0;
+    padding: 4px 6px;
+    border: 0;
+    background: none;
+    color: #8a8072;
+    font: 500 11.5px/1 var(--ui);
+    cursor: pointer;
+  }
+  .back .turn {
+    align-self: center;
+    margin: 8px 0 0;
+  }
+  .qr {
+    display: block;
+    width: 92px;
+    height: 92px;
+  }
+  .qr :global(svg) {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .scan {
+    margin-top: 8px;
+    font: 500 12.5px/1.3 var(--ui);
+    color: #4a4339;
+  }
+  .acts {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .save,
+  .cv {
+    padding: 8px 12px;
+    border-radius: 999px;
+    font: 600 13px/1 var(--ui);
+    text-decoration: none;
+  }
+  .save {
+    background: #0b3b6e;
+    color: #f4f0e8;
+  }
+  .cv {
+    color: #1d1a16;
+    border: 1px solid #d9d0bf;
+  }
+
+  @media (max-height: 820px) {
+    .lanyard {
+      display: none;
+    }
+  }
+  @media (max-width: 1099px) {
+    .lanyard {
+      display: none;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .card {
+      transition: none;
+    }
+  }
+</style>

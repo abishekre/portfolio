@@ -5,8 +5,8 @@ import Base from '../layouts/Base.astro';
 import AppShell from '../components/AppShell.astro';
 import AppIcon from '../components/AppIcon.astro';
 import BuildNotes from '../components/BuildNotes.astro';
-import IndexCard from '../components/IndexCard.astro';
 import { allProjects, ogImageFor, type Project } from '../lib/projects';
+import { projectSheet } from '../lib/sheet';
 import { SITE } from '../site';
 
 export async function getStaticPaths() {
@@ -31,14 +31,11 @@ const { Content } = await render(project);
   title={`${d.name} · ${SITE.name}`}
   description={d.tagline}
   fonts={d.theme.fonts}
-  tint={d.theme.bg}
+ 
   statusInk={d.theme.fg}
   ogImage={ogImageFor(project.id)}
+  sheet={projectSheet(project, next)}
 >
-  <Fragment slot="left">
-    <IndexCard compact />
-    <p class="kbd">Esc goes back to the home screen.</p>
-  </Fragment>
 
   <AppShell slug={project.id} theme={d.theme} label={d.name}>
     <header class="hero">
@@ -140,20 +137,6 @@ const { Content } = await render(project);
     </nav>
   </AppShell>
 
-  <Fragment slot="right">
-    <BuildNotes project={project} variant="desk" />
-    <div class="desk-links">
-      {
-        project.links.map((l) => (
-          <a class:list={{ try: l.primary }} href={l.href} target="_blank" rel="noopener">
-            {l.primary && l.kind === 'web' ? 'Try it live' : l.label}
-            <span aria-hidden="true"> ↗</span>
-          </a>
-        ))
-      }
-      <p class="next">Next on the phone: <a href={`/${next.id}`}>{next.data.name}</a></p>
-    </div>
-  </Fragment>
 </Base>
 
 <style>
@@ -193,7 +176,7 @@ const { Content } = await render(project);
     font-weight: 600;
   }
   .swatches code {
-    font: 400 11.5px/1.4 var(--mono);
+    font: 500 12.5px/1.4 var(--sys);
     color: var(--app-muted);
   }
   .swatches small,
@@ -325,9 +308,8 @@ const { Content } = await render(project);
   }
   .eyebrow {
     margin: 0 0 10px;
-    font: 400 11.5px/1 var(--mono);
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
+    font: 600 12.5px/1 var(--sys);
+    letter-spacing: 0.01em;
     color: var(--app-muted);
   }
   .what {
@@ -401,44 +383,7 @@ const { Content } = await render(project);
   }
 
   /* Desk */
-  .kbd {
-    margin: 0;
-    font-size: 13px;
-    color: var(--desk-ink-3);
-  }
-  .desk-links {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 8px;
-    font-size: 14px;
-  }
-  .desk-links a {
-    color: var(--desk-ink);
-    text-underline-offset: 3px;
-  }
-  .desk-links a.try {
-    padding: 11px 18px;
-    border-radius: 999px;
-    background: var(--desk-ink);
-    color: var(--desk);
-    font-weight: 600;
-    text-decoration: none;
-  }
-  .desk-links a.try:hover {
-    background: color-mix(in oklab, var(--desk-ink) 85%, var(--desk));
-  }
-  .next {
-    margin: 10px 0 0;
-    color: var(--desk-ink-3);
-    font-size: 13px;
-  }
 
-  @media (max-width: 1099px) {
-    .desk-links {
-      align-items: flex-start;
-    }
-  }
   @media (max-width: 767px) {
     .in-app-notes {
       display: block;

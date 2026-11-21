@@ -1,0 +1,242 @@
+---
+// A clipboard on the desk. It persists across pages; when a page carries a different sheet
+// (<template id="desk-sheet"> in Base.astro), the top page turns over the clip to reveal it.
+import DeskSheet from './DeskSheet.astro';
+import type { DeskSheet as Sheet } from '../lib/sheet';
+interface Props {
+  sheet: Sheet;
+}
+const { sheet } = Astro.props;
+---
+
+<section class="board" data-clipboard aria-label="Notes on the clipboard" aria-live="polite">
+  <span class="clip" aria-hidden="true"><i></i></span>
+  <div class="pages">
+    <div class="sheet current"><DeskSheet sheet={sheet} /></div>
+  </div>
+</section>
+
+<script>
+  const calm = () => matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.dataset.calm === '1';
+
+  function turnTo() {
+    const board = document.querySelector<HTMLElement>('[data-clipboard]');
+    const tpl = document.querySelector<HTMLTemplateElement>('#desk-sheet');
+    if (!board || !tpl) return;
+    const pages = board.querySelector<HTMLElement>('.pages')!;
+    const nextId = tpl.content.querySelector('[data-sheet-id]')?.getAttribute('data-sheet-id');
+    const top = pages.querySelector<HTMLElement>('.sheet.current');
+    if (!nextId || top?.querySelector('[data-sheet-id]')?.getAttribute('data-sheet-id') === nextId) return;
+
+    // Anything still turning from a quick earlier navigation: finish it now.
+    pages.querySelectorAll('.sheet.turning').forEach((s) => s.remove());
+
+    if (!top) return;
+    // A blank copy of the top page (same scoped-style attributes), filled with the new sheet.
+    const under = top.cloneNode(false) as HTMLElement;
+    under.className = 'sheet current';
+    under.append(tpl.content.cloneNode(true));
+    pages.prepend(under); // underneath the old top page
+
+    top.classList.remove('current');
+    if (calm()) {
+      top.remove();
+      return;
+    }
+    top.classList.add('turning');
+    under.classList.add('revealing');
+    top.addEventListener('animationend', () => top.remove(), { once: true });
+    under.addEventListener('animationend', () => under.classList.remove('revealing'), { once: true });
+  }
+
+  document.addEventListener('astro:after-swap', turnTo);
+</script>
+
+<style>
+  .board {
+    position: relative;
+    width: 300px;
+    /* Room for the lamp hanging above it. */
+    margin-top: 168px;
+    padding: 34px 14px 16px;
+    border-radius: 14px;
+    /* Hardboard: warm brown with a fine grain. */
+    background:
+      repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.025) 0 2px, transparent 2px 5px),
+      linear-gradient(160deg, #a77b4f, #8d6440);
+    box-shadow: var(--paper-shadow);
+    transform: rotate(1.2deg);
+  }
+  .clip {
+    position: absolute;
+    z-index: 3;
+    left: 50%;
+    top: -10px;
+    width: 116px;
+    height: 40px;
+    margin-left: -58px;
+    border-radius: 8px 8px 12px 12px;
+    background: linear-gradient(#e8e8e5, #a6a6a2 60%, #cfcfcb);
+    box-shadow:
+      0 2px 3px rgba(0, 0, 0, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  }
+  .clip i {
+    position: absolute;
+    left: 50%;
+    top: 9px;
+    width: 42px;
+    height: 12px;
+    margin-left: -21px;
+    border-radius: 6px;
+    background: linear-gradient(#8d8d89, #c9c9c5);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+  }
+  .pages {
+    position: relative;
+    display: grid;
+    perspective: 2600px;
+    perspective-origin: 50% 0;
+  }
+  .sheet {
+    grid-area: 1 / 1;
+    position: relative;
+    /* Fixed, so turning to a longer sheet never moves anything else on the desk. */
+    height: 404px;
+    overflow: hidden;
+    padding: 22px 20px 18px;
+    background:
+      repeating-linear-gradient(0deg, transparent 0 25px, rgba(60, 90, 140, 0.08) 25px 26px),
+      #fbf9f4;
+    color: #221e18;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+    transform-origin: 50% 0;
+    backface-visibility: hidden;
+  }
+  .sheet.turning {
+    z-index: 2;
+    animation: turn 0.7s cubic-bezier(0.45, 0.05, 0.25, 1) forwards;
+  }
+  /* As the page lifts towards you it catches the light, then turns edge-on and darkens. */
+  .sheet.turning::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(40, 30, 20, 0.35));
+    animation: shade 0.7s ease-in forwards;
+  }
+  @keyframes shade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  .sheet.revealing {
+    animation: reveal 0.62s ease-out;
+  }
+  @keyframes turn {
+    0% {
+      transform: rotateX(0deg);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+    }
+    40% {
+      box-shadow: 0 40px 40px -16px rgba(0, 0, 0, 0.3);
+    }
+    100% {
+      transform: rotateX(92deg);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0);
+    }
+  }
+  @keyframes reveal {
+    from {
+      filter: brightness(0.86);
+    }
+  }
+
+  .sheet :global(.k) {
+    margin: 0;
+    font: 600 12px/1 var(--ui);
+    color: #8a5a1f;
+  }
+  .sheet :global(.t) {
+    margin: 8px 0 0;
+    font: 400 34px/1 var(--serif);
+  }
+  .sheet :global(.s) {
+    margin: 6px 0 0;
+    font-size: 13px;
+    color: #6f675b;
+  }
+  .sheet :global(.chips) {
+    margin: 14px 0 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .sheet :global(.chips li) {
+    padding: 3px 8px;
+    border: 1px solid #d9d0bf;
+    border-radius: 999px;
+    font-size: 12px;
+    background: #fff;
+  }
+  .sheet :global(dl) {
+    margin: 14px 0 0;
+    display: grid;
+    gap: 8px;
+  }
+  .sheet :global(dl div) {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 7px;
+    border-bottom: 1px dashed #ddd3c2;
+  }
+  .sheet :global(dt) {
+    font-size: 12.5px;
+    color: #6f675b;
+  }
+  .sheet :global(dd) {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 500;
+    text-align: right;
+  }
+  .sheet :global(.links) {
+    margin: 16px 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .sheet :global(.links a) {
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid #cfc5b3;
+    font-size: 13px;
+    font-weight: 600;
+    color: #221e18;
+    text-decoration: none;
+  }
+  .sheet :global(.links a.primary) {
+    background: #221e18;
+    border-color: #221e18;
+    color: #fbf9f4;
+  }
+  .sheet :global(.f) {
+    margin: 16px 0 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #8a8072;
+  }
+
+  @media (max-width: 1099px) {
+    .board {
+      width: 100%;
+      transform: none;
+    }
+  }
+</style>

@@ -1,0 +1,193 @@
+---
+// A pendant lamp hanging over the desk. Pull the chain (click, Enter/Space, or drag it down and let go)
+// to switch between light and dark; at night it throws a warm pool of light onto the desk.
+---
+
+<div class="lamp" data-lamp>
+  <span class="pool" aria-hidden="true"></span>
+  <svg class="fixture" viewBox="0 0 180 210" aria-hidden="true">
+    <defs>
+      <linearGradient id="lamp-shade" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#1f3a2e"></stop>
+        <stop offset="0.42" stop-color="#3d6a55"></stop>
+        <stop offset="0.6" stop-color="#2c5241"></stop>
+        <stop offset="1" stop-color="#18302a"></stop>
+      </linearGradient>
+      <linearGradient id="lamp-brass" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#8a6a2e"></stop>
+        <stop offset="0.5" stop-color="#e3c47a"></stop>
+        <stop offset="1" stop-color="#9c7a36"></stop>
+      </linearGradient>
+      <radialGradient id="lamp-bulb" cx="50%" cy="40%" r="60%">
+        <stop offset="0" stop-color="#fffbe8"></stop>
+        <stop offset="1" stop-color="#ffd27a"></stop>
+      </radialGradient>
+    </defs>
+    <!-- Cord, from the ceiling -->
+    <path d="M90 -40 V 66" stroke="#1d1a16" stroke-width="2.4"></path>
+    <rect x="80" y="62" width="20" height="16" rx="3" fill="url(#lamp-brass)"></rect>
+    <!-- Shade -->
+    <path d="M70 78 H110 C 126 96, 150 116, 160 150 H20 C 30 116, 54 96, 70 78 Z" fill="url(#lamp-shade)"></path>
+    <path d="M70 78 H110 C 126 96, 150 116, 160 150" fill="none" stroke="#fff" stroke-opacity="0.12" stroke-width="1.5"></path>
+    <rect x="18" y="148" width="144" height="5" rx="2.5" fill="url(#lamp-brass)"></rect>
+    <!-- Bulb: grey when off, glowing when on -->
+    <ellipse class="bulb" cx="90" cy="156" rx="30" ry="9"></ellipse>
+  </svg>
+
+  <button class="chain" type="button" data-chain aria-label="Pull the lamp chain: switch light and dark" aria-pressed="false">
+    <span class="beads" aria-hidden="true"></span>
+    <span class="bob" aria-hidden="true"></span>
+  </button>
+</div>
+
+<script>
+  import { Spring, calm } from '../lib/spring';
+
+  function init() {
+    const lamp = document.querySelector<HTMLElement>('[data-lamp]');
+    if (!lamp || lamp.dataset.ready) return;
+    lamp.dataset.ready = '1';
+    const chain = lamp.querySelector<HTMLButtonElement>('[data-chain]')!;
+    const sync = () => chain.setAttribute('aria-pressed', String(!!window.__theme?.isDark()));
+    sync();
+    document.addEventListener('pf:theme', sync);
+
+    // The chain hangs on a spring: drag it down, let go, it springs back up.
+    const pull = new Spring({ stiffness: 260, damping: 14, onUpdate: (y) => (chain.style.transform = `translateY(${y}px)`) });
+    const toggle = () => {
+      const r = chain.getBoundingClientRect();
+      window.__theme?.toggle(r.left + r.width / 2, r.top);
+    };
+
+    let startY = 0;
+    let dragging = false;
+    let pulled = 0;
+    let byPointer = false;
+    chain.addEventListener('pointerdown', (e) => {
+      dragging = true;
+      byPointer = true;
+      startY = e.clientY;
+      pulled = 0;
+      pull.stop();
+      chain.setPointerCapture(e.pointerId);
+    });
+    chain.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      pulled = Math.max(0, Math.min(46, (e.clientY - startY) * 0.8));
+      pull.set(pulled);
+    });
+    const release = () => {
+      if (!dragging) return;
+      dragging = false;
+      if (calm()) pull.set(0);
+      else {
+        if (pulled < 4) pull.set(18); // a plain click still gives the chain a tug
+        pull.to(0);
+      }
+    };
+    chain.addEventListener('pointerup', release);
+    chain.addEventListener('pointercancel', release);
+    // Click (mouse, or Enter/Space on the keyboard) switches; a long drag counts as a click too.
+    chain.addEventListener('click', () => {
+      // From the keyboard there was no pointer, so give the chain its tug here.
+      if (!byPointer && !calm()) {
+        pull.set(18);
+        pull.to(0);
+      }
+      byPointer = false;
+      toggle();
+    });
+  }
+  document.addEventListener('astro:page-load', init);
+</script>
+
+<style>
+  .lamp {
+    position: absolute;
+    z-index: 2;
+    top: -40px;
+    left: 30px;
+    width: 180px;
+    height: 300px;
+    pointer-events: none;
+  }
+  /* At night the lamp lights the desk below it. */
+  .pool {
+    position: absolute;
+    left: 90px;
+    top: 150px;
+    width: 1100px;
+    height: 1100px;
+    margin: -380px 0 0 -550px;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(255, 196, 112, 0.2), rgba(255, 196, 112, 0.07) 45%, transparent);
+    opacity: 0;
+    transition: opacity 0.6s ease;
+  }
+  :global(:root[data-time='night']) .pool {
+    opacity: 1;
+  }
+  .fixture {
+    position: absolute;
+    inset: 0 0 auto;
+    width: 180px;
+    height: 210px;
+    overflow: visible;
+    filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.28));
+  }
+  .bulb {
+    fill: #d9d3c6;
+    transition: fill 0.4s ease;
+  }
+  :global(:root[data-time='night']) .bulb {
+    fill: url(#lamp-bulb);
+    filter: drop-shadow(0 0 10px #ffd27a);
+  }
+
+  .chain {
+    position: absolute;
+    left: 134px;
+    top: 150px;
+    width: 26px;
+    height: 84px;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: grab;
+    pointer-events: auto;
+    touch-action: none;
+  }
+  .chain:active {
+    cursor: grabbing;
+  }
+  .beads {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 3px;
+    height: 64px;
+    margin-left: -1.5px;
+    background: radial-gradient(circle at 50% 50%, #c9a85c 1.3px, transparent 1.6px) 0 0 / 3px 5px repeat-y;
+  }
+  .bob {
+    position: absolute;
+    left: 50%;
+    top: 62px;
+    width: 11px;
+    height: 16px;
+    margin-left: -5.5px;
+    border-radius: 45% 45% 50% 50%;
+    background: linear-gradient(90deg, #8a6a2e, #e8cc86 45%, #9c7a36);
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.35);
+  }
+  .chain:focus-visible {
+    outline-offset: 2px;
+    border-radius: 8px;
+  }
+
+  @media (max-width: 1099px) {
+    .lamp {
+      display: none;
+    }
+  }
+</style>

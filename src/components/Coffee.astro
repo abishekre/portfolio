@@ -39,6 +39,12 @@
         </linearGradient>
         <filter id="cf-shadow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="9"></feGaussianBlur></filter>
         <filter id="cf-soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1.1"></feGaussianBlur></filter>
+        <!-- Stirring smears the latte art; the scale follows how fast you stir. -->
+        <filter id="cf-swirl" x="-30%" y="-30%" width="160%" height="160%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="4"></feTurbulence>
+          <feDisplacementMap in="SourceGraphic" scale="0" data-swirl></feDisplacementMap>
+          <feGaussianBlur stdDeviation="0.9"></feGaussianBlur>
+        </filter>
       </defs>
 
       <!-- An old ring on the desk, from yesterday's cup. -->
@@ -49,12 +55,12 @@
       <circle r="130" fill="url(#cf-saucer)"></circle>
       <circle r="97" fill="none" stroke="#7a6a52" stroke-opacity="0.12" stroke-width="2.5"></circle>
 
-      <!-- Spoon, resting on the saucer -->
-      <g transform="rotate(32)">
+      <!-- Spoon, resting on the saucer; drag around the cup to stir with it -->
+      <g class="spoon" data-spoon><g transform="rotate(32)">
         <rect x="-4" y="-124" width="8" height="64" rx="4" fill="url(#cf-steel)" transform="translate(112 52)"></rect>
         <ellipse cx="112" cy="-54" rx="13" ry="19" fill="url(#cf-steel)" transform="translate(0 0)"></ellipse>
         <ellipse cx="110" cy="-56" rx="7" ry="11" fill="#fff" opacity="0.45"></ellipse>
-      </g>
+      </g></g>
 
       <!-- Cup: shadow, handle, rim -->
       <circle cx="7" cy="11" r="84" fill="#000" opacity="0.26" filter="url(#cf-shadow)"></circle>
@@ -70,7 +76,7 @@
       <!-- Coffee, with a latte heart -->
       <g class="liquid">
         <circle r="67" fill="url(#cf-coffee)"></circle>
-        <g class="art" filter="url(#cf-soft)">
+        <g class="art" filter="url(#cf-swirl)" data-art>
           <path
             d="M0 34 C -46 6, -50 -34, -20 -40 C -6 -43, 0 -33, 0 -25 C 0 -33, 6 -43, 20 -40 C 50 -34, 46 6, 0 34 Z"
             fill="#e8d2b3"
@@ -82,6 +88,10 @@
         <ellipse cx="-24" cy="-30" rx="22" ry="9" fill="#fff" opacity="0.08" transform="rotate(-30 -24 -30)"></ellipse>
       </g>
 
+      <!-- A ring that runs across the surface with each sip -->
+      <circle class="ripple" r="12" fill="none" stroke="#f1dcc0" stroke-width="2" data-ripple></circle>
+      <!-- The pour, on a refill -->
+      <rect class="pour" x="-4" y="-190" width="8" height="190" rx="4" fill="#6e4426" data-pour></rect>
       <!-- Glaze highlight on the rim -->
       <path d="M -58 -50 A 77 77 0 0 1 26 -72" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity="0.9"></path>
     </svg>
@@ -90,26 +100,104 @@
 </div>
 
 <script>
+  import { Spring, calm } from '../lib/spring';
   const ORD = ['', '1st', '2nd', '3rd'];
+
   function init() {
     const root = document.querySelector<HTMLElement>('[data-coffee]');
     if (!root || root.dataset.ready) return;
     root.dataset.ready = '1';
     const cup = root.querySelector<HTMLButtonElement>('[data-cup]')!;
     const note = root.querySelector<HTMLElement>('[data-cup-note]')!;
+    const art = root.querySelector<SVGGElement>('[data-art]')!;
+    const spoon = root.querySelector<SVGGElement>('[data-spoon]')!;
+    const swirl = root.querySelector<SVGFEDisplacementMapElement>('[data-swirl]')!;
+    const ripple = root.querySelector<SVGCircleElement>('[data-ripple]')!;
+    const pour = root.querySelector<SVGRectElement>('[data-pour]')!;
+    const steam = root.querySelector<SVGSVGElement>('.steam')!;
     let level = 3;
     const show = () => {
       root.dataset.level = String(level);
-      cup.setAttribute('aria-label', level ? `A cup of coffee. Take a sip.` : 'An empty cup. Refill it.');
+      cup.setAttribute('aria-label', level ? 'A cup of coffee. Take a sip, or drag to stir.' : 'An empty cup. Refill it.');
     };
     show();
+
+    // Steam leans away from a cursor passing nearby, then drifts back upright.
+    const lean = new Spring({ stiffness: 40, damping: 9, onUpdate: (v) => steam.style.setProperty('--lean', v.toFixed(3)) });
+    let leanTimer = 0;
+    document.addEventListener('pointermove', (e) => {
+      if (calm() || e.pointerType !== 'mouse') return;
+      const r = cup.getBoundingClientRect();
+      const cx = r.left + r.width / 2;
+      const cy = r.top + r.height / 2;
+      const d = Math.hypot(e.clientX - cx, e.clientY - cy);
+      if (d > 260) return;
+      lean.to(Math.max(-1, Math.min(1, (cx - e.clientX) / 140)) * (1 - d / 260));
+      clearTimeout(leanTimer);
+      leanTimer = window.setTimeout(() => lean.to(0), 450);
+    });
+
+    // Stirring: drag around the middle of the cup. The spoon follows, the art turns and smears,
+    // and both settle once you stop.
+    let artAngle = 0;
+    let smear = 0;
+    let stirring = false;
+    let stirred = 0;
+    let lastA = 0;
+    const turnArt = new Spring({ stiffness: 30, damping: 12, onUpdate: (a) => art.setAttribute('transform', `rotate(${a.toFixed(2)})`) });
+    const settle = () => {
+      smear *= 0.94;
+      swirl.setAttribute('scale', smear.toFixed(2));
+      if (smear > 0.2) requestAnimationFrame(settle);
+      else swirl.setAttribute('scale', '0');
+    };
+    const angleAt = (e: PointerEvent) => {
+      const r = cup.getBoundingClientRect();
+      return (Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2)) * 180) / Math.PI;
+    };
+    cup.addEventListener('pointerdown', (e) => {
+      stirring = true;
+      stirred = 0;
+      lastA = angleAt(e);
+      cup.setPointerCapture(e.pointerId);
+    });
+    cup.addEventListener('pointermove', (e) => {
+      if (!stirring || level === 0 || calm()) return;
+      const a = angleAt(e);
+      let d = a - lastA;
+      if (d > 180) d -= 360;
+      if (d < -180) d += 360;
+      lastA = a;
+      stirred += Math.abs(d);
+      if (stirred < 12) return;
+      spoon.setAttribute('transform', `rotate(${(a - 30).toFixed(1)})`);
+      artAngle += d * 0.7;
+      turnArt.to(artAngle);
+      const was = smear;
+      smear = Math.min(16, smear + Math.abs(d) * 0.12);
+      swirl.setAttribute('scale', smear.toFixed(2));
+      if (was <= 0.2) requestAnimationFrame(settle);
+    });
+    const endStir = () => (stirring = false);
+    cup.addEventListener('pointerup', endStir);
+    cup.addEventListener('pointercancel', endStir);
+
+    // A tap is a sip; three and it's empty; a tap on the empty cup refills it.
     cup.addEventListener('click', () => {
+      if (stirred >= 12) {
+        stirred = 0;
+        return;
+      }
       if (level > 0) {
         level--;
         show();
+        if (!calm()) {
+          ripple.classList.remove('go');
+          void ripple.getBoundingClientRect();
+          ripple.classList.add('go');
+        }
         return;
       }
-      // Refill: count today's cups.
       let n = 2;
       try {
         const today = new Date().toDateString();
@@ -117,10 +205,20 @@
         n = saved.day === today ? saved.n + 1 : 2;
         localStorage.setItem('pf-cups', JSON.stringify({ day: today, n }));
       } catch {}
-      level = 3;
+      if (!calm()) {
+        pour.classList.remove('go');
+        void pour.getBoundingClientRect();
+        pour.classList.add('go');
+      }
       root.classList.add('refill');
-      show();
-      setTimeout(() => root.classList.remove('refill'), 1000);
+      setTimeout(
+        () => {
+          level = 3;
+          show();
+        },
+        calm() ? 0 : 260,
+      );
+      setTimeout(() => root.classList.remove('refill'), 1400);
       window.__egg?.('coffee');
       note.textContent = n === 2 ? '2nd cup today.' : `${ORD[n] ?? `${n}th`} cup today. Same, honestly.`;
       note.classList.add('show');
@@ -132,12 +230,12 @@
 
 <style>
   .coffee {
-    position: relative;
+    position: absolute;
+    left: -78px;
+    bottom: -64px;
     width: 230px;
     height: 230px;
     /* Partly off the edge of the desk: it's in the background, not on display. */
-    margin: 0 0 -54px -78px;
-    flex: none;
   }
   .cup {
     position: absolute;
@@ -207,7 +305,14 @@
     transform: translateX(-50%);
     pointer-events: none;
   }
+  .steam {
+    --lean: 0;
+  }
   .steam path {
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+    translate: calc(var(--lean) * -14px) 0;
+    rotate: calc(var(--lean) * -14deg);
     fill: none;
     stroke: var(--steam, rgba(255, 255, 255, 0.55));
     stroke-width: 16;
@@ -240,6 +345,55 @@
     --steam: rgba(255, 255, 255, 0.7);
   }
 
+  .ripple {
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: center;
+    pointer-events: none;
+  }
+  .ripple:global(.go) {
+    animation: ripple 0.9s cubic-bezier(0.2, 0.6, 0.3, 1);
+  }
+  @keyframes ripple {
+    from {
+      opacity: 0.55;
+      transform: scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: scale(5.2);
+    }
+  }
+  .pour {
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: 50% 0;
+    pointer-events: none;
+  }
+  .pour:global(.go) {
+    animation: pour 1.1s ease-in-out;
+  }
+  @keyframes pour {
+    0% {
+      opacity: 0.95;
+      transform: scaleY(0);
+    }
+    30% {
+      opacity: 0.95;
+      transform: scaleY(1);
+    }
+    75% {
+      opacity: 0.95;
+      transform: scaleY(1);
+    }
+    100% {
+      opacity: 0;
+      transform: scaleY(0.2) translateY(160px);
+    }
+  }
+  .cup {
+    touch-action: none;
+  }
   .cup-note {
     position: absolute;
     left: 150px;

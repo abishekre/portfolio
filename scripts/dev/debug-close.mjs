@@ -9,7 +9,7 @@ await p.click('[data-dot="1"]');
 await p.waitForTimeout(700);
 await p.click('a.app[href="/work"]');
 await p.waitForTimeout(900);
-await p.click('.back');
+await p.click('.appview .back');
 await p.waitForTimeout(900);
 console.log(await p.evaluate(() => {
   const pages = document.querySelector('[data-pages]');

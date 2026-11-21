@@ -125,17 +125,18 @@ test('/hearth now goes to /lumen', async () => {
   expect(v.redirects).toContainEqual({ source: '/hearth', destination: '/lumen', permanent: true });
 });
 
-test('lock screen: shown on a first visit, gone after unlocking, back with the Lock button', async ({ page }) => {
+test('lock screen: shown on a first visit, gone after unlocking, back from Control Center', async ({ page }) => {
   await page.goto('/');
   const lock = page.getByRole('dialog', { name: 'Lock screen' });
   await expect(lock).toBeVisible();
-  await page.getByRole('button', { name: 'Open' }).click();
+  await page.getByRole('button', { name: 'Swipe up to open' }).click();
   await expect(lock).toBeHidden();
   await page.reload();
   await expect(lock).toBeHidden();
-  await page.getByRole('button', { name: 'Lock the phone' }).click();
+  await page.getByRole('button', { name: /Control Center/ }).click();
+  await page.getByRole('dialog', { name: 'Control Center' }).getByRole('button', { name: 'Lock' }).click();
   await expect(lock).toBeVisible();
-  await page.getByRole('button', { name: 'Open' }).click();
+  await page.getByRole('button', { name: 'Swipe up to open' }).click();
   await expect(lock).toBeHidden();
 });
 
@@ -202,4 +203,76 @@ test('résumé print page has the job and no client names', async ({ page }) => 
   await expect(page.getByText('Associate Technical Consultant').first()).toBeVisible();
   const text = await page.locator('body').innerText();
   for (const name of ['Martin', 'Servera', 'ABB', 'Endeavour', 'Axis']) expect(text).not.toContain(name);
+});
+
+test('theme: Control Center switches to dark, and it survives a reload', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: /Control Center/ }).click();
+  const cc = page.getByRole('dialog', { name: 'Control Center' });
+  await cc.getByRole('radio', { name: 'Dark' }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-time', 'night');
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('data-time', 'night');
+  await page.getByRole('button', { name: /Control Center/ }).click();
+  await cc.getByRole('radio', { name: 'Light' }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-time', 'day');
+});
+
+test('theme: the desk lamp toggles light and dark', async ({ page }) => {
+  test.skip(isMobile(page), 'the desk is a desktop thing');
+  await page.goto('/');
+  const before = await page.locator('html').getAttribute('data-time');
+  await page.getByRole('button', { name: /lamp chain/ }).click();
+  await expect(page.locator('html')).not.toHaveAttribute('data-time', before!);
+});
+
+test('the desk stays put while apps open, and the clipboard turns to the app', async ({ page }) => {
+  test.skip(isMobile(page), 'the desk is a desktop thing');
+  await page.goto('/');
+  // Mark the desk's DOM; a re-render would lose the mark.
+  await page.evaluate(() => document.querySelector('.desk-l')!.setAttribute('data-mark', '1'));
+  await expect(page.locator('[data-clipboard] .sheet.current [data-sheet-id]')).toHaveAttribute('data-sheet-id', 'home');
+  await page.locator('a.app[href="/tally"]').click();
+  await expect(page).toHaveURL('/tally');
+  await expect(page.locator('[data-clipboard] .sheet.current [data-sheet-id]')).toHaveAttribute('data-sheet-id', 'tally');
+  await expect(page.locator('[data-clipboard]')).toContainText('Get it on Google Play');
+  await page.keyboard.press('Escape');
+  await expect(page).toHaveURL('/');
+  await expect(page.locator('.desk-l')).toHaveAttribute('data-mark', '1');
+});
+
+test('contact card: a vCard with the name, role and email', async ({ request }) => {
+  const res = await request.get('/abishek.vcf');
+  expect(res.status()).toBe(200);
+  const v = await res.text();
+  expect(v).toContain('BEGIN:VCARD');
+  expect(v).toContain('FN:Abishek R Edakkalathur');
+  expect(v).toContain('TITLE:Associate Technical Consultant');
+  expect(v).toMatch(/EMAIL;[^:]*:abishekre31@gmail\.com/);
+});
+
+test('ID card turns over to the QR code and Save contact', async ({ page }) => {
+  test.skip(isMobile(page), 'the desk is a desktop thing');
+  await page.goto('/');
+  await page.getByRole('button', { name: /Turn the ID card over/ }).click();
+  await expect(page.locator('[data-idcard]')).toHaveClass(/flipped/);
+  await expect(page.getByRole('link', { name: 'Save contact' })).toBeVisible();
+  await expect(page.locator('[data-idcard] .qr svg')).toBeVisible();
+});
+
+test('sticky note: writes an email with the note in it', async ({ page }) => {
+  test.skip(isMobile(page), 'the desk is a desktop thing');
+  await page.goto('/');
+  await page.locator('[data-sticky-open]').click();
+  await page.getByPlaceholder('Your name').fill('Priya');
+  await page.getByPlaceholder(/Hi Abishek/).fill('Loved Tally. Free for a call?');
+  await page.evaluate(() => {
+    // Keep the test page here instead of following the mailto: link.
+    Object.defineProperty(window, 'location', { value: { ...window.location, set href(v: string) {} }, configurable: true });
+  }).catch(() => {});
+  await page.getByRole('button', { name: 'Send' }).click();
+  const href = await page.locator('[data-sticky]').getAttribute('data-last-mailto');
+  expect(href).toContain('mailto:abishekre31@gmail.com');
+  expect(decodeURIComponent(href!)).toContain('Loved Tally. Free for a call?');
+  expect(decodeURIComponent(href!)).toContain('Priya');
 });

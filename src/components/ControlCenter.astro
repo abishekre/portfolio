@@ -1,0 +1,224 @@
+---
+// Control Center, inside the phone: Appearance (Light / Dark / Auto), Lock, and Calm motion.
+// Opened with window.__cc.open() (the button beside the page dots). Closes with a tap outside or Esc.
+---
+
+<div class="cc" data-cc hidden>
+  <button class="cc-scrim" type="button" aria-label="Close Control Center" data-cc-close></button>
+  <section class="cc-sheet" role="dialog" aria-modal="true" aria-label="Control Center">
+    <div class="cc-tile cc-wide" role="radiogroup" aria-label="Appearance">
+      <p class="cc-label">Appearance</p>
+      <div class="seg">
+        <button type="button" role="radio" data-mode="light">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5"></circle><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"></path></svg>
+          Light
+        </button>
+        <button type="button" role="radio" data-mode="dark">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"></path></svg>
+          Dark
+        </button>
+        <button type="button" role="radio" data-mode="auto">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 3.5v17" ></path><path d="M12 3.5a8.5 8.5 0 0 1 0 17Z" class="fill"></path></svg>
+          Auto
+        </button>
+      </div>
+      <p class="cc-hint" data-cc-hint></p>
+    </div>
+    <button class="cc-tile" type="button" data-cc-lock>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.5"></rect><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"></path></svg>
+      <span>Lock</span>
+    </button>
+    <button class="cc-tile" type="button" role="switch" aria-checked="false" data-cc-calm>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12c3-4 6-4 9 0s6 4 9 0"></path></svg>
+      <span>Calm motion</span>
+    </button>
+  </section>
+</div>
+
+<script>
+  function init() {
+    const cc = document.querySelector<HTMLElement>('[data-cc]');
+    if (!cc) return;
+    const modes = [...cc.querySelectorAll<HTMLButtonElement>('[data-mode]')];
+    const calmBtn = cc.querySelector<HTMLButtonElement>('[data-cc-calm]')!;
+    const hint = cc.querySelector<HTMLElement>('[data-cc-hint]')!;
+    let opener: HTMLElement | null = null;
+
+    const sync = () => {
+      const m = window.__theme?.mode() ?? 'auto';
+      modes.forEach((b) => b.setAttribute('aria-checked', String(b.dataset.mode === m)));
+      hint.textContent = m === 'auto' ? 'Auto: dark in the evening in India, or when your device is.' : '';
+      calmBtn.setAttribute('aria-checked', String(document.documentElement.dataset.calm === '1'));
+    };
+    const open = () => {
+      opener = document.activeElement as HTMLElement;
+      sync();
+      cc.hidden = false;
+      requestAnimationFrame(() => {
+        cc.classList.add('on');
+        cc.querySelector<HTMLButtonElement>('[aria-checked="true"]')?.focus({ preventScroll: true });
+      });
+    };
+    const close = () => {
+      cc.classList.remove('on');
+      setTimeout(() => (cc.hidden = true), 260);
+      opener?.focus({ preventScroll: true });
+    };
+    window.__cc = { open, close };
+
+    modes.forEach((b) =>
+      b.addEventListener('click', () => {
+        const r = b.getBoundingClientRect();
+        window.__theme?.set(b.dataset.mode as 'light' | 'dark' | 'auto', r.left + r.width / 2, r.top + r.height / 2);
+        sync();
+      }),
+    );
+    calmBtn.addEventListener('click', () => {
+      window.__theme?.calm(document.documentElement.dataset.calm !== '1');
+      sync();
+    });
+    cc.querySelector<HTMLButtonElement>('[data-cc-lock]')!.addEventListener('click', () => {
+      close();
+      setTimeout(() => window.__lock?.(), 120);
+    });
+    cc.querySelector<HTMLButtonElement>('[data-cc-close]')!.addEventListener('click', close);
+    cc.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        close();
+      }
+    });
+    document.addEventListener('pf:theme', sync);
+  }
+  document.addEventListener('astro:page-load', init);
+</script>
+
+<style>
+  .cc {
+    position: absolute;
+    inset: 0;
+    z-index: 30;
+  }
+  .cc[hidden] {
+    display: none;
+  }
+  .cc-scrim {
+    position: absolute;
+    inset: 0;
+    padding: 0;
+    border: 0;
+    background: rgba(10, 8, 6, 0.28);
+    backdrop-filter: blur(18px) saturate(1.4);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4);
+    opacity: 0;
+    transition: opacity 0.26s ease;
+    cursor: default;
+  }
+  .cc-sheet {
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    top: 64px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    transform: translateY(-14px) scale(0.97);
+    transform-origin: 80% 0;
+    opacity: 0;
+    transition:
+      opacity 0.22s ease,
+      transform 0.34s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .cc:global(.on) .cc-scrim {
+    opacity: 1;
+  }
+  .cc:global(.on) .cc-sheet {
+    transform: none;
+    opacity: 1;
+  }
+  .cc-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 16px;
+    border: 0;
+    border-radius: 22px;
+    background: rgba(58, 54, 50, 0.62);
+    box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.14);
+    color: #f6f2ea;
+    font: 600 14px/1.2 'Archivo', var(--ui);
+    text-align: left;
+    cursor: pointer;
+  }
+  .cc-wide {
+    grid-column: 1 / -1;
+    cursor: default;
+  }
+  .cc-label {
+    margin: 0;
+    font: 600 13px/1 'Archivo', var(--ui);
+    opacity: 0.7;
+  }
+  .seg {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    width: 100%;
+  }
+  .seg button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 6px;
+    border: 0;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.08);
+    color: inherit;
+    font: 600 13px/1 'Archivo', var(--ui);
+    cursor: pointer;
+    transition:
+      background 0.2s ease,
+      color 0.2s ease;
+  }
+  .seg button[aria-checked='true'] {
+    background: #f6f2ea;
+    color: #1d1a16;
+  }
+  .cc-hint {
+    margin: 0;
+    min-height: 1em;
+    font: 500 12px/1.4 var(--ui);
+    opacity: 0.65;
+  }
+  svg {
+    width: 24px;
+    height: 24px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  svg .fill {
+    fill: currentColor;
+    stroke: none;
+  }
+  .cc-tile[role='switch'][aria-checked='true'] {
+    background: #f6f2ea;
+    color: #1d1a16;
+  }
+  .cc-tile:active,
+  .seg button:active {
+    transform: scale(0.96);
+  }
+  @media (max-width: 767px) {
+    .cc {
+      position: fixed;
+    }
+    .cc-sheet {
+      top: calc(env(safe-area-inset-top) + 20px);
+    }
+  }
+</style>

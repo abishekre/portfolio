@@ -4,7 +4,6 @@
 import { Image } from 'astro:assets';
 import Base from '../layouts/Base.astro';
 import AppShell from '../components/AppShell.astro';
-import IndexCard from '../components/IndexCard.astro';
 import { SITE } from '../site';
 import { CERTS } from '../lib/resume';
 import { monthYear } from '../lib/yaml';
@@ -20,8 +19,7 @@ const THEME = {
 };
 ---
 
-<Base title={`Wallet · ${SITE.name}`} description={`Certifications and badges: ${CERTS.map((c) => c.name).join(', ')}.`} statusInk={THEME.fg} tint="#2A2620">
-  <Fragment slot="left"><IndexCard compact /></Fragment>
+<Base title={`Wallet · ${SITE.name}`} description={`Certifications and badges: ${CERTS.map((c) => c.name).join(', ')}.`} statusInk={THEME.fg}>
 
   <AppShell slug="wallet" theme={THEME} label="Wallet">
     <h1>Wallet</h1>

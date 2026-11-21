@@ -1,0 +1,49 @@
+---
+// One page on the clipboard. Rendered on the desk, and into a <template> on every page so the
+// persistent clipboard can turn to it without reloading anything else.
+import type { DeskSheet } from '../lib/sheet';
+interface Props {
+  sheet: DeskSheet;
+}
+const { sheet } = Astro.props;
+---
+
+<div class="sheet-body" data-sheet-id={sheet.id}>
+  <p class="k">{sheet.kicker}</p>
+  <p class="t">{sheet.title}</p>
+  {sheet.subtitle && <p class="s">{sheet.subtitle}</p>}
+  {
+    sheet.chips && sheet.chips.length > 0 && (
+      <ul class="chips">
+        {sheet.chips.map((c) => (
+          <li>{c}</li>
+        ))}
+      </ul>
+    )
+  }
+  {
+    sheet.rows && sheet.rows.length > 0 && (
+      <dl>
+        {sheet.rows.map((r) => (
+          <div>
+            <dt>{r.label}</dt>
+            <dd>{r.value}</dd>
+          </div>
+        ))}
+      </dl>
+    )
+  }
+  {
+    sheet.links && sheet.links.length > 0 && (
+      <p class="links">
+        {sheet.links.map((l) => (
+          <a class:list={{ primary: l.primary }} href={l.href} target={l.download ? undefined : '_blank'} rel="noopener" download={l.download ? '' : undefined}>
+            {l.label}
+            {!l.download && <span aria-hidden="true"> ↗</span>}
+          </a>
+        ))}
+      </p>
+    )
+  }
+  {sheet.foot && <p class="f">{sheet.foot}</p>}
+</div>

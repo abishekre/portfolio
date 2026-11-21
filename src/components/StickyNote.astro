@@ -1,0 +1,242 @@
+---
+// A sticky note with the email address. Hover and its corner lifts; click and it peels off the desk
+// and turns into a note you can write on. "Send" opens your email app with it filled in;
+// nothing goes through a server. Esc (or "Stick it back") puts it back.
+import { SITE } from '../site';
+const [user, domain] = SITE.email.split('@');
+---
+
+<div class="sticky" data-sticky data-email={SITE.email}>
+  <button class="pad" type="button" data-sticky-open aria-expanded="false" aria-controls="sticky-compose">
+    <span class="t">Say hello</span>
+    <span class="e">{user}@<wbr />{domain}</span>
+  </button>
+
+  <form class="compose" id="sticky-compose" data-compose hidden>
+    <p class="t">A note for Abishek</p>
+    <label>
+      <span>From</span>
+      <input name="from" autocomplete="name" placeholder="Your name" required />
+    </label>
+    <label>
+      <span>Note</span>
+      <textarea name="note" rows="4" placeholder="Hi Abishek, …" required></textarea>
+    </label>
+    <div class="row">
+      <button class="send" type="submit">Send</button>
+      <button class="back" type="button" data-sticky-close>Stick it back</button>
+    </div>
+    <p class="small">Opens your email app, addressed to {SITE.email}.</p>
+  </form>
+</div>
+
+<script>
+  function init() {
+    const note = document.querySelector<HTMLElement>('[data-sticky]');
+    if (!note || note.dataset.ready) return;
+    note.dataset.ready = '1';
+    const pad = note.querySelector<HTMLButtonElement>('[data-sticky-open]')!;
+    const form = note.querySelector<HTMLFormElement>('[data-compose]')!;
+
+    const open = () => {
+      note.classList.add('peeled');
+      pad.setAttribute('aria-expanded', 'true');
+      form.hidden = false;
+      requestAnimationFrame(() => {
+        note.classList.add('writing');
+        form.querySelector<HTMLInputElement>('input')!.focus({ preventScroll: true });
+      });
+    };
+    const close = () => {
+      note.classList.remove('writing');
+      pad.setAttribute('aria-expanded', 'false');
+      setTimeout(() => {
+        form.hidden = true;
+        note.classList.remove('peeled');
+      }, 260);
+      pad.focus({ preventScroll: true });
+    };
+    pad.addEventListener('click', open);
+    note.querySelector('[data-sticky-close]')!.addEventListener('click', close);
+    note.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !form.hidden) close();
+    });
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const data = new FormData(form);
+      const from = String(data.get('from') ?? '').trim();
+      const body = `${String(data.get('note') ?? '').trim()}\n\n${from}\n(sent from the note on abishekre.in)`;
+      const href = `mailto:${note.dataset.email}?subject=${encodeURIComponent(`Hello from abishekre.in${from ? `, ${from}` : ''}`)}&body=${encodeURIComponent(body)}`;
+      note.dataset.lastMailto = href;
+      window.va?.('event', { name: 'Sent a desk note' });
+      window.location.href = href;
+      window.__toast?.('Your email app should open with the note in it.', 3200);
+      form.reset();
+      close();
+    });
+  }
+  document.addEventListener('astro:page-load', init);
+</script>
+
+<style>
+  @property --curl {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+  .sticky {
+    --curl: 12px;
+    position: relative;
+    width: 178px;
+    transform: rotate(4deg);
+    transition: --curl 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .sticky:hover:not(:global(.peeled)) {
+    --curl: 30px;
+  }
+  .pad {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+    min-height: 150px;
+    padding: 18px 16px;
+    border: 0;
+    background: linear-gradient(172deg, #f8de7c, #f0cd5a);
+    color: #3a2f12;
+    text-align: left;
+    cursor: pointer;
+    /* The corner that lifts is cut away here and redrawn, folded, by ::after. */
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--curl)), calc(100% - var(--curl)) 100%, 0 100%);
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.12)) drop-shadow(0 12px 12px rgba(0, 0, 0, 0.22));
+    transition:
+      opacity 0.25s ease,
+      transform 0.45s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .sticky::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: var(--curl);
+    height: var(--curl);
+    background: linear-gradient(315deg, transparent 50%, #d9b545 50%, #f6e3a0 100%);
+    box-shadow: -3px -3px 6px -2px rgba(0, 0, 0, 0.18);
+    pointer-events: none;
+  }
+  .sticky:global(.peeled)::after {
+    opacity: 0;
+  }
+  .sticky:global(.peeled) .pad {
+    opacity: 0;
+    transform: translate(-10px, -24px) rotate(-7deg);
+  }
+  .t {
+    margin: 0;
+    font: 600 12px/1 'Archivo', var(--ui);
+    letter-spacing: 0.02em;
+    opacity: 0.7;
+  }
+  .e {
+    font: 400 19px/1.25 'Kalam', var(--serif);
+  }
+
+  /* The note, peeled off and lifted towards you. */
+  .compose {
+    position: absolute;
+    right: -6px;
+    bottom: -6px;
+    z-index: 5;
+    display: grid;
+    gap: 10px;
+    width: 258px;
+    padding: 18px 16px 14px;
+    background: linear-gradient(172deg, #fae388, #f2d264);
+    color: #3a2f12;
+    box-shadow:
+      0 2px 3px rgba(0, 0, 0, 0.12),
+      0 26px 40px -16px rgba(0, 0, 0, 0.5);
+    transform: rotate(-5deg) translate(0, 16px) scale(0.92);
+    transform-origin: 100% 100%;
+    opacity: 0;
+    transition:
+      opacity 0.22s ease,
+      transform 0.45s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .compose[hidden] {
+    display: none;
+  }
+  .sticky:global(.writing) .compose {
+    transform: rotate(-2deg) translate(-12px, -18px);
+    opacity: 1;
+  }
+  label {
+    display: grid;
+    gap: 3px;
+  }
+  label span {
+    font: 600 11.5px/1 var(--ui);
+    opacity: 0.65;
+  }
+  input,
+  textarea {
+    width: 100%;
+    padding: 4px 0;
+    border: 0;
+    border-bottom: 1px solid rgba(58, 47, 18, 0.28);
+    background: transparent;
+    color: #2a220c;
+    font: 400 18px/1.3 'Kalam', var(--serif);
+    resize: none;
+    outline: none;
+  }
+  input:focus,
+  textarea:focus {
+    border-bottom-color: #3a2f12;
+  }
+  input::placeholder,
+  textarea::placeholder {
+    color: rgba(58, 47, 18, 0.4);
+  }
+  .row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .send {
+    padding: 9px 16px;
+    border: 0;
+    border-radius: 999px;
+    background: #2a220c;
+    color: #fae388;
+    font: 600 13px/1 var(--ui);
+    cursor: pointer;
+  }
+  .back {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: #5a4a1c;
+    font: 500 12.5px/1 var(--ui);
+    cursor: pointer;
+  }
+  .small {
+    margin: 0;
+    font: 400 11px/1.35 var(--ui);
+    opacity: 0.6;
+  }
+
+  @media (max-width: 1099px) {
+    .sticky {
+      display: none;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pad,
+    .compose,
+    .sticky {
+      transition: none;
+    }
+  }
+</style>

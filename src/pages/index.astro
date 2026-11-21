@@ -2,18 +2,15 @@
 import Base from '../layouts/Base.astro';
 import AppIcon from '../components/AppIcon.astro';
 import DockIcon from '../components/DockIcon.astro';
-import IndexCard from '../components/IndexCard.astro';
-import DeskObjects from '../components/DeskObjects.astro';
 import LockScreen from '../components/LockScreen.astro';
 import { Image } from 'astro:assets';
-import { allProjects, counts } from '../lib/projects';
+import { allProjects } from '../lib/projects';
 import { SITE } from '../site';
 import { HOME } from '../lib/home';
 import { RESUME, CERTS } from '../lib/resume';
 import { monthYear } from '../lib/yaml';
 
 const projects = await allProjects();
-const c = counts(projects);
 const building = projects.find((p) => p.id === HOME.nowBuilding?.app);
 const photoOf = projects.find((p) => p.id === HOME.photo?.app);
 const photo = photoOf?.screens[(HOME.photo?.screen ?? 1) - 1];
@@ -27,10 +24,6 @@ const timeline = [
 ---
 
 <Base title={SITE.name} description={`${SITE.bio} ${SITE.description}`.trim()}>
-  <Fragment slot="left">
-    <IndexCard />
-    <DeskObjects kind="badge" title={`Day job · ${job.company}`} role={job.role} line={`Since ${monthYear(job.start)} · ${SITE.city}`} href="/work" />
-  </Fragment>
 
   <main class="home" data-home>
     <button class="done" type="button" data-done>Done</button>
@@ -154,8 +147,8 @@ const timeline = [
         <button type="button" class="dot" data-dot="1" aria-label="Work page"></button>
       </div>
       <span class="pager-side">
-        <button type="button" class="lockbtn" data-lock-btn aria-label="Lock the phone">
-          <svg viewBox="0 0 16 20" aria-hidden="true"><rect x="2" y="8.5" width="12" height="10" rx="2.5"></rect><path d="M4.8 8.5V6a3.2 3.2 0 0 1 6.4 0v2.5"></path></svg>
+        <button type="button" class="lockbtn" data-cc-btn aria-label="Control Center: appearance and lock">
+          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 6h9M16 6h1M3 14h1M8 14h9"></path><circle cx="14" cy="6" r="2"></circle><circle cx="6" cy="14" r="2"></circle></svg>
         </button>
       </span>
     </div>
@@ -170,25 +163,6 @@ const timeline = [
 
   <LockScreen />
 
-  <Fragment slot="right">
-    <div class="summary">
-      <p class="eyebrow">On this phone</p>
-      <p class="big">{c.total} apps</p>
-      {c.play > 0 && <p class="line">{c.play} on Google Play</p>}
-      {c.web > 0 && <p class="line">{c.web} you can open on the web</p>}
-      {c.openSource > 0 && <p class="line">{c.openSource} open source</p>}
-      {c.client > 0 && <p class="line">{c.client} made for clients</p>}
-      <p class="hint">Click an app to open it. Swipe, or press → at the end of a row, for page two.</p>
-    </div>
-    <div class="desk-stack">
-      {
-        building?.screens[0] && (
-          <DeskObjects kind="polaroid" image={building.screens[0]} caption={`${building.data.name}, on the bench`} href={`/${building.id}`} />
-        )
-      }
-      <DeskObjects kind="sticky" title="Say hello" text={SITE.email} href={`mailto:${SITE.email}`} />
-    </div>
-  </Fragment>
 </Base>
 
 <script>
@@ -254,7 +228,7 @@ const timeline = [
       if (i >= 0 && i !== current()) goPage(i);
     });
 
-    home.querySelector<HTMLButtonElement>('[data-lock-btn]')!.onclick = () => window.__lock?.();
+    home.querySelector<HTMLButtonElement>('[data-cc-btn]')!.onclick = () => window.__cc?.open();
 
     // Developer options: tap the clock seven times, like the build number on Android.
     const devApp = home.querySelector<HTMLElement>('[data-dev-app]')!;
@@ -442,8 +416,10 @@ const timeline = [
     justify-content: flex-end;
   }
   .w-time {
-    font: 400 52px/0.9 var(--serif);
-    letter-spacing: -0.02em;
+    font: 800 54px/0.88 var(--sys);
+    font-stretch: 70%;
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
   }
   .w-place {
     margin-top: 8px;
@@ -451,9 +427,8 @@ const timeline = [
     color: var(--wall-ink-2);
   }
   .w-label {
-    font: 400 11px/1 var(--mono);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    font: 600 12.5px/1 var(--sys);
+    letter-spacing: 0.01em;
     color: var(--wall-ink-2);
   }
   .w-what {
@@ -534,9 +509,8 @@ const timeline = [
     background: linear-gradient(to top, rgba(0, 0, 0, 0.55), transparent);
   }
   .photo-app {
-    font: 400 11px/1 var(--mono);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    font: 600 12.5px/1 var(--sys);
+    letter-spacing: 0.01em;
   }
 
   .all {
@@ -569,15 +543,16 @@ const timeline = [
   .j-label,
   .tl-label {
     display: block;
-    font: 400 11px/1 var(--mono);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    font: 600 12.5px/1 var(--sys);
+    letter-spacing: 0.01em;
     opacity: 0.75;
   }
   .j-role {
     display: block;
     margin-top: 10px;
-    font: 400 30px/1.02 var(--serif);
+    font: 700 27px/1.05 var(--sys);
+    font-stretch: 88%;
+    letter-spacing: -0.01em;
   }
   .j-tools {
     display: block;
@@ -622,7 +597,8 @@ const timeline = [
   }
   .tl-year {
     display: block;
-    font: 400 20px/1 var(--serif);
+    font: 700 19px/1 var(--sys);
+    font-variant-numeric: tabular-nums;
   }
   .tl-what {
     display: block;
@@ -693,7 +669,7 @@ const timeline = [
     cursor: pointer;
   }
   .lockbtn svg {
-    width: 13px;
+    width: 16px;
     height: 16px;
     fill: none;
     stroke: currentColor;
@@ -819,40 +795,4 @@ const timeline = [
     }
   }
 
-  /* Desk, right side */
-  .desk-stack {
-    display: flex;
-    align-items: flex-end;
-    gap: 0;
-  }
-  .desk-stack > :global(.sticky) {
-    margin: 0 0 -18px -14px;
-    position: relative;
-  }
-  .summary {
-    color: var(--desk-ink);
-  }
-  .eyebrow {
-    margin: 0 0 12px;
-    font: 400 12px/1 var(--mono);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--desk-ink-3);
-  }
-  .big {
-    margin: 0 0 6px;
-    font: 400 46px/1 var(--serif);
-  }
-  .line {
-    margin: 0;
-    font-size: 14px;
-    line-height: 1.7;
-    color: var(--desk-ink-2);
-  }
-  .hint {
-    margin: 22px 0 0;
-    font-size: 13px;
-    line-height: 1.55;
-    color: var(--desk-ink-3);
-  }
 </style>

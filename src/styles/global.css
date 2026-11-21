@@ -18,6 +18,8 @@
   --serif: 'Instrument Serif', Georgia, serif;
   --ui: 'Inter Tight', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --mono: 'Space Mono', ui-monospace, Consolas, monospace;
+  /* The phone's own UI face, like an OS font: Archivo, falling back to Inter Tight. */
+  --sys: 'Archivo', 'Inter Tight', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
   --ease-out: cubic-bezier(0.2, 0.9, 0.25, 1);
   /* Corner of an icon, and of the phone's screen; an opening app morphs between them. */
@@ -94,28 +96,35 @@ img {
   animation-duration: 0.44s;
   animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
 }
-/* The desk's tint blends across the whole change. */
-::view-transition-old(root),
+/* The desk is part of the root layer. It doesn't animate at all: the new, live page is shown from the
+   first frame, so the coffee, lamp and lanyard never flicker. Only the phone's layers move. */
+::view-transition-old(root) {
+  animation: none;
+  opacity: 0;
+}
 ::view-transition-new(root) {
-  animation-duration: 0.44s;
+  animation: none;
 }
-/* Desk notes: the old ones lift away, the new ones settle in just after. */
-::view-transition-old(desk-l),
-::view-transition-old(desk-r) {
-  animation: vt-out 0.18s ease-in both, vt-lift 0.18s ease-in both;
+
+/* Switching light/dark: the new look spreads in a circle from the lamp or switch that was used.
+   Nothing else is a separate layer during the switch, so the circle covers the whole page. */
+:root[data-vt='theme'] .screen,
+:root[data-vt='theme'] .statusbar,
+:root[data-vt='theme'] [data-appview] {
+  view-transition-name: none !important;
 }
-::view-transition-new(desk-l),
-::view-transition-new(desk-r) {
-  animation: vt-in 0.32s 0.14s ease-out both, vt-settle 0.42s 0.14s cubic-bezier(0.32, 0.72, 0, 1) both;
+:root[data-vt='theme']::view-transition-old(root) {
+  opacity: 1;
 }
-@keyframes vt-lift {
-  to {
-    transform: translateY(-8px);
-  }
+:root[data-vt='theme']::view-transition-new(root) {
+  animation: theme-reveal 0.75s cubic-bezier(0.4, 0, 0.2, 1);
 }
-@keyframes vt-settle {
+@keyframes theme-reveal {
   from {
-    transform: translateY(10px);
+    clip-path: circle(0 at var(--vt-x) var(--vt-y));
+  }
+  to {
+    clip-path: circle(150vmax at var(--vt-x) var(--vt-y));
   }
 }
 /* The screen behind holds still and dims, like iOS; only the app moves. */
@@ -193,6 +202,18 @@ button {
   :root {
     --screen-r: 0px;
   }
+}
+
+/* Calm motion (Control Center): treat everything as reduced motion. */
+:root[data-calm='1'] *,
+:root[data-calm='1'] *::before,
+:root[data-calm='1'] *::after,
+:root[data-calm='1']::view-transition-group(*),
+:root[data-calm='1']::view-transition-old(*),
+:root[data-calm='1']::view-transition-new(*) {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

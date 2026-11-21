@@ -2,7 +2,6 @@
 import Base from '../layouts/Base.astro';
 import AppShell from '../components/AppShell.astro';
 import AppIcon from '../components/AppIcon.astro';
-import IndexCard from '../components/IndexCard.astro';
 import { allProjects } from '../lib/projects';
 import { PAPER } from '../lib/paper';
 import { SITE } from '../site';
@@ -11,7 +10,6 @@ const projects = await allProjects();
 ---
 
 <Base title={`All projects · ${SITE.name}`} description="Every project on one page." statusInk={PAPER.fg}>
-  <Fragment slot="left"><IndexCard /></Fragment>
 
   <AppShell slug="list" theme={PAPER} label="All projects">
     <h1>All projects</h1>
@@ -67,9 +65,8 @@ const projects = await allProjects();
     color: var(--app-muted);
   }
   .st {
-    font: 400 11px/1.4 var(--mono);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
+    font: 600 12.5px/1.4 var(--sys);
+    letter-spacing: 0.01em;
     margin-top: 6px;
   }
 </style>

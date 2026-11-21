@@ -5,7 +5,7 @@ p.on('console', (m) => console.log('console', m.type(), m.text()));
 p.on('pageerror', (e) => console.log('pageerror', e.message));
 await p.goto(process.argv[2] ?? 'https://www.abishekre.in', { waitUntil: 'networkidle' });
 await p.tap('a.app[href="/tally"]'); await p.waitForTimeout(1200); console.log('1', p.url());
-await p.evaluate(() => document.querySelector('[data-appview]').scrollBy(0, 500)); await p.waitForTimeout(600); await p.tap('.back'); await p.waitForTimeout(1200); console.log('2', p.url());
+await p.evaluate(() => document.querySelector('[data-appview]').scrollBy(0, 500)); await p.waitForTimeout(600); await p.tap('.appview .back'); await p.waitForTimeout(1200); console.log('2', p.url());
 const info = await p.evaluate(() => {
   const a = document.querySelector('a.app[href="/kcal"]'); const r = a.getBoundingClientRect();
   const top = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
