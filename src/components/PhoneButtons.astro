@@ -1,0 +1,182 @@
+---
+// The phone's side buttons (desktop): power on the right locks and wakes it, like a real one;
+// volume on the left moves an on-screen volume bar (there's no sound, and it says so once).
+// Keyboard: P presses power, L pulls the lamp chain.
+---
+
+<button class="side power" type="button" data-power aria-label="Power button: lock or wake the phone"></button>
+<button class="side vol up" type="button" data-vol="1" aria-label="Volume up"></button>
+<button class="side vol down" type="button" data-vol="-1" aria-label="Volume down"></button>
+<div class="volhud" data-volhud aria-hidden="true"><i></i></div>
+
+<script>
+  import { navigate } from 'astro:transitions/client';
+
+  function press(b: HTMLElement) {
+    b.classList.remove('pressed');
+    void b.offsetWidth;
+    b.classList.add('pressed');
+    navigator.vibrate?.(6);
+  }
+  function power() {
+    const lock = document.querySelector<HTMLElement>('[data-lock]');
+    if (!lock) {
+      // In an app: go home, then lock, as the button would on a phone.
+      try {
+        sessionStorage.setItem('pf-lock-on-home', '1');
+      } catch {}
+      navigate('/');
+      return;
+    }
+    if (lock.hidden) window.__lock?.();
+    else window.__unlock?.();
+  }
+
+  let level = 0.5;
+  let hudTimer = 0;
+  let told = false;
+  function volume(step: number) {
+    const hud = document.querySelector<HTMLElement>('[data-volhud]');
+    if (!hud) return;
+    level = Math.max(0, Math.min(1, level + step * 0.125));
+    hud.style.setProperty('--level', String(level));
+    hud.classList.add('on');
+    clearTimeout(hudTimer);
+    hudTimer = window.setTimeout(() => hud.classList.remove('on'), 1300);
+    if (!told) {
+      told = true;
+      window.__toast?.('No sound on this one.', 1800);
+    }
+  }
+
+  function init() {
+    // Arriving home after pressing power inside an app.
+    try {
+      if (location.pathname === '/' && sessionStorage.getItem('pf-lock-on-home')) {
+        sessionStorage.removeItem('pf-lock-on-home');
+        setTimeout(() => window.__lock?.(), 350);
+      }
+    } catch {}
+    const powerBtn = document.querySelector<HTMLElement>('[data-power]');
+    if (!powerBtn || powerBtn.dataset.ready) return;
+    powerBtn.dataset.ready = '1';
+    powerBtn.addEventListener('click', () => {
+      press(powerBtn);
+      power();
+    });
+    document.querySelectorAll<HTMLElement>('[data-vol]').forEach((b) =>
+      b.addEventListener('click', () => {
+        press(b);
+        volume(Number(b.dataset.vol));
+      }),
+    );
+  }
+  document.addEventListener('astro:page-load', init);
+
+  // P for power, L for the lamp (when not typing).
+  document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if ((e.target as HTMLElement).closest('input, textarea, [contenteditable]')) return;
+    const k = e.key.toLowerCase();
+    if (k === 'p') {
+      const b = document.querySelector<HTMLElement>('[data-power]');
+      if (b && getComputedStyle(b).display !== 'none') {
+        press(b);
+        power();
+      }
+    } else if (k === 'l') {
+      document.querySelector<HTMLButtonElement>('[data-chain]')?.click();
+    }
+  });
+</script>
+
+<style>
+  .side {
+    position: absolute;
+    z-index: 1;
+    width: 5px;
+    padding: 0;
+    border: 0;
+    background: linear-gradient(90deg, #2a2a2a, #4a4a4a 50%, #1e1e1e);
+    cursor: pointer;
+    transition: transform 0.12s ease;
+  }
+  .power {
+    right: -4px;
+    top: 220px;
+    height: 96px;
+    border-radius: 0 3px 3px 0;
+  }
+  .vol {
+    left: -4px;
+    height: 58px;
+    border-radius: 3px 0 0 3px;
+  }
+  .up {
+    top: 200px;
+  }
+  .down {
+    top: 270px;
+  }
+  /* A press pushes the button into the frame for a moment. */
+  .power:global(.pressed) {
+    animation: in-r 0.18s ease;
+  }
+  .vol:global(.pressed) {
+    animation: in-l 0.18s ease;
+  }
+  @keyframes in-r {
+    50% {
+      transform: translateX(-2px);
+    }
+  }
+  @keyframes in-l {
+    50% {
+      transform: translateX(2px);
+    }
+  }
+  .side:focus-visible {
+    outline: 2px solid var(--desk-ink);
+    outline-offset: 3px;
+  }
+
+  /* The volume bar, inside the screen's left edge. */
+  .volhud {
+    --level: 0.5;
+    position: absolute;
+    z-index: 36;
+    left: 20px;
+    top: 200px;
+    width: 10px;
+    height: 128px;
+    border-radius: 6px;
+    background: rgba(40, 36, 32, 0.55);
+    overflow: hidden;
+    opacity: 0;
+    transform: translateX(-8px);
+    transition:
+      opacity 0.2s ease,
+      transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    pointer-events: none;
+  }
+  .volhud:global(.on) {
+    opacity: 1;
+    transform: none;
+  }
+  .volhud i {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: calc(var(--level) * 100%);
+    background: #fbf6ee;
+    transition: height 0.2s ease;
+  }
+
+  @media (max-width: 767px) {
+    .side,
+    .volhud {
+      display: none;
+    }
+  }
+</style>

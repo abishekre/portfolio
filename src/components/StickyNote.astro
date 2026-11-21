@@ -49,6 +49,10 @@ const [user, domain] = SITE.email.split('@');
     };
     const close = () => {
       note.classList.remove('writing');
+      // Pressed back onto the desk: a slight squash as it sticks.
+      note.classList.remove('stuck');
+      void note.offsetWidth;
+      note.classList.add('stuck');
       pad.setAttribute('aria-expanded', 'false');
       setTimeout(() => {
         form.hidden = true;
@@ -90,6 +94,14 @@ const [user, domain] = SITE.email.split('@');
     width: 178px;
     transform: rotate(4deg);
     transition: --curl 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .sticky:global(.stuck) .pad {
+    animation: stick 0.5s cubic-bezier(0.34, 1.4, 0.64, 1) 0.2s;
+  }
+  @keyframes stick {
+    40% {
+      transform: scale(1.03, 0.97);
+    }
   }
   .sticky:hover:not(:global(.peeled)) {
     --curl: 30px;

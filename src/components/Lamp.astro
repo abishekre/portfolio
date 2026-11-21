@@ -48,15 +48,27 @@
     if (!lamp || lamp.dataset.ready) return;
     lamp.dataset.ready = '1';
     const chain = lamp.querySelector<HTMLButtonElement>('[data-chain]')!;
+    const bulb = lamp.querySelector<SVGElement>('.bulb')!;
     const sync = () => chain.setAttribute('aria-pressed', String(!!window.__theme?.isDark()));
     sync();
     document.addEventListener('pf:theme', sync);
 
-    // The chain hangs on a spring: drag it down, let go, it springs back up.
-    const pull = new Spring({ stiffness: 260, damping: 14, onUpdate: (y) => (chain.style.transform = `translateY(${y}px)`) });
+    // The chain stays hooked to the shade: pulling lengthens it, letting go springs it back,
+    // and the pull swings a little on its way up.
+    const pull = new Spring({ stiffness: 300, damping: 15, onUpdate: (y) => chain.style.setProperty('--pull', `${Math.max(0, y).toFixed(1)}px`) });
+    const sway = new Spring({ stiffness: 60, damping: 4, onUpdate: (a) => chain.style.setProperty('--sway', `${a.toFixed(2)}deg`) });
+
+    // The switch: the bulb flickers on (or dims), then the room changes, spreading out from the bulb.
     const toggle = () => {
-      const r = chain.getBoundingClientRect();
-      window.__theme?.toggle(r.left + r.width / 2, r.top);
+      const r = bulb.getBoundingClientRect();
+      const x = r.left + r.width / 2;
+      const y = r.top + r.height / 2;
+      navigator.vibrate?.(8);
+      if (calm()) return window.__theme?.toggle(x, y);
+      lamp.classList.remove('flick');
+      void lamp.offsetWidth;
+      lamp.classList.add('flick');
+      setTimeout(() => window.__theme?.toggle(x, y), 140);
     };
 
     let startY = 0;
@@ -73,26 +85,27 @@
     });
     chain.addEventListener('pointermove', (e) => {
       if (!dragging) return;
-      pulled = Math.max(0, Math.min(46, (e.clientY - startY) * 0.8));
+      // Gets heavier the further you pull.
+      const d = Math.max(0, e.clientY - startY);
+      pulled = 70 * (1 - Math.exp(-d / 60));
       pull.set(pulled);
     });
     const release = () => {
       if (!dragging) return;
       dragging = false;
-      if (calm()) pull.set(0);
-      else {
-        if (pulled < 4) pull.set(18); // a plain click still gives the chain a tug
-        pull.to(0);
-      }
+      if (calm()) return pull.set(0);
+      if (pulled < 4) pull.set(16); // a plain click still gives the chain a tug
+      pull.to(0);
+      sway.kick((Math.random() < 0.5 ? -1 : 1) * (40 + pulled * 1.5));
     };
     chain.addEventListener('pointerup', release);
     chain.addEventListener('pointercancel', release);
-    // Click (mouse, or Enter/Space on the keyboard) switches; a long drag counts as a click too.
+    // Click (mouse, or Enter/Space on the keyboard) switches.
     chain.addEventListener('click', () => {
-      // From the keyboard there was no pointer, so give the chain its tug here.
       if (!byPointer && !calm()) {
-        pull.set(18);
+        pull.set(16);
         pull.to(0);
+        sway.kick(40);
       }
       byPointer = false;
       toggle();
@@ -145,11 +158,15 @@
   }
 
   .chain {
+    --pull: 0px;
+    --sway: 0deg;
     position: absolute;
+    transform: rotate(var(--sway));
+    transform-origin: 50% 0;
     left: 134px;
     top: 150px;
     width: 26px;
-    height: 84px;
+    height: calc(84px + var(--pull));
     padding: 0;
     border: 0;
     background: none;
@@ -160,19 +177,37 @@
   .chain:active {
     cursor: grabbing;
   }
+  /* Switching: the filament catches, flickers once, then settles. */
+  .lamp:global(.flick) .bulb {
+    animation: flick 0.32s steps(1, end);
+  }
+  @keyframes flick {
+    0% {
+      opacity: 0.35;
+    }
+    25% {
+      opacity: 1;
+    }
+    45% {
+      opacity: 0.55;
+    }
+    65% {
+      opacity: 1;
+    }
+  }
   .beads {
     position: absolute;
     left: 50%;
     top: 0;
     width: 3px;
-    height: 64px;
+    height: calc(64px + var(--pull));
     margin-left: -1.5px;
     background: radial-gradient(circle at 50% 50%, #c9a85c 1.3px, transparent 1.6px) 0 0 / 3px 5px repeat-y;
   }
   .bob {
     position: absolute;
     left: 50%;
-    top: 62px;
+    top: calc(62px + var(--pull));
     width: 11px;
     height: 16px;
     margin-left: -5.5px;

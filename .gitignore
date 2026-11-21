@@ -9,3 +9,6 @@ playwright-report/
 
 # Lock-screen capture intermediates (the .webp files are what the site uses)
 src/assets/lock/*.png
+
+.vercel
+.env*

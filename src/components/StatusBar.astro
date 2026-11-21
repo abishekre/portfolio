@@ -37,6 +37,18 @@ import { SITE } from '../site';
           } catch {}
         })
         .catch(() => {});
+    // The real battery, where the browser shares it.
+    navigator.getBattery?.().then((b) => {
+      const show = () =>
+        document.querySelectorAll('.battery').forEach((el) => {
+          el.style.setProperty('--level', String(Math.max(0.08, b.level)));
+          el.classList.toggle('charging', b.charging);
+        });
+      show();
+      b.addEventListener('levelchange', show);
+      b.addEventListener('chargingchange', show);
+      document.addEventListener('astro:page-load', show);
+    }).catch(() => {});
     // Airplane mode: the site keeps working, and says so once.
     const plane = (off) => document.querySelectorAll('[data-plane]').forEach((el) => (el.hidden = !off));
     addEventListener('offline', () => {
@@ -60,7 +72,8 @@ import { SITE } from '../site';
     /* Its own layer, so it stays on top while an app opens or closes. */
     view-transition-name: statusbar;
     position: absolute;
-    z-index: 20;
+    /* Above Control Center and the lock screen: the island is hardware, nothing covers it. */
+    z-index: 35;
     inset: 0 0 auto;
     height: 54px;
     display: flex;
@@ -94,10 +107,13 @@ import { SITE } from '../site';
     padding: 1.5px;
     opacity: 0.9;
   }
+  .battery {
+    position: relative;
+  }
   .battery i {
     display: block;
     height: 100%;
-    width: 72%;
+    width: calc(var(--level, 0.72) * 100%);
     background: currentColor;
     border-radius: 1.5px;
   }
@@ -105,5 +121,22 @@ import { SITE } from '../site';
     .statusbar {
       display: none;
     }
+  }
+  /* Over Control Center or the lock screen, the time and battery turn light, as on a real phone. */
+  :global(html.cc-open) .statusbar,
+  :global(html:has([data-lock]:not([hidden]))) .statusbar {
+    color: #fbf6ee;
+    transition: color 0.25s ease;
+  }
+  /* Charging: a small bolt over the battery. */
+  .battery:global(.charging)::after {
+    content: '';
+    position: absolute;
+    inset: -3px 0 0 7px;
+    width: 8px;
+    height: 12px;
+    background: currentColor;
+    clip-path: polygon(55% 0, 0 58%, 45% 58%, 35% 100%, 100% 38%, 55% 38%);
+    mix-blend-mode: difference;
   }
 </style>

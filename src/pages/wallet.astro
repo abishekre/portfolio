@@ -118,7 +118,9 @@ const THEME = {
     box-shadow:
       0 -1px 0 rgba(255, 255, 255, 0.08) inset,
       0 -8px 24px rgba(0, 0, 0, 0.35);
-    transition: margin 0.45s cubic-bezier(0.32, 0.72, 0, 1);
+    transition: margin 0.5s cubic-bezier(0.32, 0.72, 0, 1), box-shadow 0.4s ease;
+    /* The passes below slide one after another, not all at once. */
+    transition-delay: calc(var(--i) * 22ms);
   }
   .pass + .pass {
     margin-top: -96px;
@@ -168,6 +170,11 @@ const THEME = {
     transition:
       max-height 0.45s cubic-bezier(0.32, 0.72, 0, 1),
       padding 0.45s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .pass:global(.open) {
+    box-shadow:
+      0 -1px 0 rgba(255, 255, 255, 0.08) inset,
+      0 18px 40px -12px rgba(0, 0, 0, 0.6);
   }
   .pass.open .pass-body {
     max-height: 420px;

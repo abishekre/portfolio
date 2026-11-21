@@ -29,14 +29,14 @@ const notes = HOME.milestones.slice(0, 3).map((m) => {
 ---
 
 <div class="lock" data-lock hidden role="dialog" aria-modal="true" aria-label="Lock screen" tabindex="-1">
-  <Image class="wall" src={wallpaper} alt="" widths={[430, 860, 1290]} sizes="(max-width: 767px) 100vw, 390px" loading="lazy" decoding="async" />
+  <Image class="wall" onload="this.classList.add('in')" src={wallpaper} alt="" widths={[430, 860, 1290]} sizes="(max-width: 767px) 100vw, 390px" loading="lazy" decoding="async" />
 
   <div class="when" data-lock-clockwrap>
     <p class="date" data-lock-date></p>
     <p class="time" data-clock></p>
   </div>
 
-  <Image class="city" src={city} alt="" widths={[430, 860, 1290]} sizes="(max-width: 767px) 100vw, 390px" loading="lazy" decoding="async" />
+  <Image class="city" onload="this.classList.add('in')" src={city} alt="" widths={[430, 860, 1290]} sizes="(max-width: 767px) 100vw, 390px" loading="lazy" decoding="async" />
 
   <ul class="notes" aria-label="Notifications">
     {
@@ -99,7 +99,18 @@ const notes = HOME.milestones.slice(0, 3).map((m) => {
       stamp();
       l.hidden = false;
       l.classList.toggle('instant', !!instant);
-      l.classList.remove('gone');
+      l.classList.remove('gone', 'on');
+      // Locking from the home screen: the sheet comes down from the top; on a first visit it's simply there.
+      if (!instant) {
+        l.classList.add('above');
+        document.documentElement.classList.add('locking');
+        void l.offsetWidth;
+        l.classList.remove('above');
+        setTimeout(function () {
+          document.documentElement.classList.remove('locking');
+        }, 600);
+      }
+      navigator.vibrate && !instant && navigator.vibrate(8);
       requestAnimationFrame(function () {
         l.classList.add('on');
         // Focus the screen itself (no ring), so Enter, Space and Esc work straight away.
@@ -110,15 +121,19 @@ const notes = HOME.milestones.slice(0, 3).map((m) => {
       var l = el();
       if (!l || l.hidden) return;
       remember();
-      l.classList.remove('on', 'instant');
+      l.classList.remove('on', 'instant', 'dragging');
       l.classList.add('gone');
+      navigator.vibrate && navigator.vibrate(6);
       document.documentElement.classList.add('unlocking');
       setTimeout(function () {
         l.hidden = true;
         l.classList.remove('gone');
-        document.documentElement.classList.remove('unlocking');
         document.dispatchEvent(new CustomEvent('pf:unlocked'));
-      }, 560);
+      }, 520);
+      // The home screen's entrance runs a little longer than the sheet takes to leave.
+      setTimeout(function () {
+        document.documentElement.classList.remove('unlocking');
+      }, 1000);
     };
     // First visit, landing on the home page itself: start locked, before the first paint.
     var seen = false;
@@ -154,30 +169,42 @@ const notes = HOME.milestones.slice(0, 3).map((m) => {
       }),
     );
 
-    // Tap anywhere that isn't a control, or swipe up from the middle of the screen.
+    // Tap anywhere that isn't a control, or swipe the sheet up from the middle of the screen.
     let y0 = 0;
     let dy = 0;
+    let lastY = 0;
+    let lastT = 0;
+    let vy = 0;
     let tracking = false;
+    const band = (d: number) => (d > 0 ? d * 0.25 : d); // pulling down only stretches a little
     lock.addEventListener('pointerdown', (e) => {
       if ((e.target as HTMLElement).closest('a, button')) return;
       const r = lock.getBoundingClientRect();
       if (e.clientY > r.bottom - 48) return; // the bottom edge belongs to the phone
       tracking = true;
-      y0 = e.clientY;
-      dy = 0;
+      y0 = lastY = e.clientY;
+      lastT = e.timeStamp;
+      dy = vy = 0;
       lock.classList.add('dragging');
     });
     lock.addEventListener('pointermove', (e) => {
       if (!tracking) return;
-      dy = Math.min(0, e.clientY - y0);
-      lock.style.setProperty('--drag', `${dy}px`);
+      dy = e.clientY - y0;
+      vy = (e.clientY - lastY) / Math.max(1, e.timeStamp - lastT);
+      lastY = e.clientY;
+      lastT = e.timeStamp;
+      lock.style.setProperty('--drag', `${band(dy)}px`);
     });
     const end = () => {
       if (!tracking) return;
       tracking = false;
+      const h = lock.getBoundingClientRect().height;
+      const tap = Math.abs(dy) < 6;
       lock.classList.remove('dragging');
-      lock.style.removeProperty('--drag');
-      if (dy > -8 || dy < -70) unlock();
+      if (tap || dy < -h / 3 || vy < -0.5) {
+        unlock();
+        requestAnimationFrame(() => lock.style.removeProperty('--drag'));
+      } else lock.style.removeProperty('--drag'); // springs back (CSS transition)
     };
     lock.addEventListener('pointerup', end);
     lock.addEventListener('pointercancel', () => {
@@ -197,7 +224,8 @@ const notes = HOME.milestones.slice(0, 3).map((m) => {
     z-index: 15;
     overflow: hidden;
     color: #fff;
-    background: #3a2320;
+    /* A tiny blurred copy of the wallpaper, inline, so the very first frame already looks right. */
+    background: #3a2320 url('data:image/webp;base64,UklGRmIAAABXRUJQVlA4IFYAAABwBACdASoQACIAPt1apE2opSOiNUgBEBuJZACdMoRwADHZtIXsrs14JDyzrAD9EbDy7NjQgskMQbP4rIMeQfijaAu6NdwAXpW730Ls0sa3DYZUISeAAA==') center 40% / cover no-repeat;
     touch-action: none;
     user-select: none;
     font-family: 'Archivo Variable', var(--ui);
@@ -219,47 +247,43 @@ const notes = HOME.milestones.slice(0, 3).map((m) => {
     pointer-events: none;
   }
 
-  /* Each layer moves at its own speed as the screen slides away: sky, clock, then city. */
-  .wall,
-  .when,
-  .city,
-  .notes,
-  .bottom {
+  /* The lock screen moves as one sheet; the clock rides slightly ahead of it (parallax). */
+  .lock {
+    transform: translateY(var(--drag));
     transition:
-      transform 0.56s cubic-bezier(0.32, 0.72, 0, 1),
-      opacity 0.4s ease;
-  }
-  .wall {
-    transform: translateY(calc(var(--drag) * 0.5));
+      transform 0.5s cubic-bezier(0.32, 0.72, 0, 1),
+      opacity 0.3s ease;
   }
   .when {
-    transform: translateY(calc(var(--drag) * 0.8));
+    transform: translateY(calc(var(--drag) * 0.18));
+    transition: transform 0.5s cubic-bezier(0.32, 0.72, 0, 1);
   }
-  .city,
-  .notes,
-  .bottom {
-    transform: translateY(var(--drag));
-  }
-  .lock:global(.dragging) * {
+  .lock:global(.dragging),
+  .lock:global(.dragging) .when {
     transition: none;
   }
-  .lock:global(.gone) .wall {
-    transform: translateY(-35%);
+  .lock:global(.gone) {
+    transform: translateY(-100%);
+    pointer-events: none;
   }
   .lock:global(.gone) .when {
-    transform: translateY(-70%);
-    opacity: 0;
+    transform: translateY(-18%);
   }
-  .lock:global(.gone) .city,
-  .lock:global(.gone) .notes,
-  .lock:global(.gone) .bottom {
-    transform: translateY(-105%);
+  /* Locking: it starts above the screen and drops in with a short settle. */
+  .lock:global(.above) {
+    transform: translateY(-100%);
+    transition: none;
   }
-  .lock:global(.gone) {
-    pointer-events: none;
-    background: transparent;
+  .lock:not(:global(.above)):not(:global(.gone)):not(:global(.dragging)) {
+    transition: transform 0.6s cubic-bezier(0.34, 1.12, 0.64, 1);
   }
-  .lock:global(.gone) .wall {
+  /* The wallpaper fades in when it arrives, over a blurred stand-in; no flash of flat colour. */
+  .wall,
+  .city {
+    transition: opacity 0.5s ease;
+  }
+  .wall:not(:global(.in)),
+  .city:not(:global(.in)) {
     opacity: 0;
   }
 

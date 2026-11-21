@@ -1,0 +1,21 @@
+// Close-ups of the clipboard at 2x: home, an app, and mid-turn both ways.
+import { chromium } from 'playwright';
+const [base = 'http://localhost:4321', out = '.'] = process.argv.slice(2);
+const b = await chromium.launch();
+const p = await b.newPage({ viewport: { width: 1440, height: 960 }, deviceScaleFactor: 2 });
+await p.addInitScript(() => { localStorage.setItem('pf-unlocked', '1'); localStorage.setItem('pf-peeked', '1'); });
+await p.goto(base, { waitUntil: 'networkidle' });
+await p.waitForTimeout(800);
+const clip = p.locator('[data-clipboard]');
+await clip.screenshot({ path: `${out}/clip-home.png` });
+await p.locator('a.app[href="/tally"]').click();
+await p.waitForTimeout(250);
+await clip.screenshot({ path: `${out}/clip-mid-forward.png` });
+await p.waitForTimeout(900);
+await clip.screenshot({ path: `${out}/clip-tally.png` });
+await p.keyboard.press('Escape');
+await p.waitForTimeout(250);
+await clip.screenshot({ path: `${out}/clip-mid-back.png` });
+await p.waitForTimeout(900);
+await clip.screenshot({ path: `${out}/clip-home2.png` });
+await b.close();

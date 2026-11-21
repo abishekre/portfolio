@@ -59,7 +59,8 @@ const qr = await qrSvg();
     let lastX = 0;
     let lastT = 0;
     lanyard.addEventListener('pointermove', (e) => {
-      if (dragging || calm() || e.pointerType !== 'mouse') return;
+      // Only the strap catches a passing cursor; over the card itself it holds still (see below).
+      if (dragging || calm() || e.pointerType !== 'mouse' || (e.target as HTMLElement).closest('[data-idcard]')) return;
       const now = performance.now();
       if (lastT && now - lastT < 80) {
         const vx = (e.clientX - lastX) / Math.max(8, now - lastT);
@@ -69,6 +70,21 @@ const qr = await qrSvg();
       lastT = now;
     });
     lanyard.addEventListener('pointerleave', () => (lastT = 0));
+
+    // Over the card (or once it's turned over), it eases to a stop and stays put,
+    // so its buttons are easy to hit. Away from it, it swings freely again.
+    const loose = { stiffness: 26, damping: 2.2 };
+    const held = { stiffness: 90, damping: 16 };
+    const hold = (on: boolean) => {
+      Object.assign(swing.o, on || card.classList.contains('flipped') ? held : loose);
+      if (on) swing.to(0);
+    };
+    card.addEventListener('pointerenter', (e) => {
+      if (e.pointerType === 'mouse') hold(true);
+    });
+    card.addEventListener('pointerleave', () => {
+      if (!dragging) hold(false);
+    });
 
     // Drag to swing: the angle follows the pointer around the pivot; let go and it swings back.
     let dragging = false;
@@ -104,6 +120,7 @@ const qr = await qrSvg();
       if (!dragging) return;
       dragging = false;
       if (moved >= 4) {
+        Object.assign(swing.o, loose);
         swing.kick(vel);
         swing.to(0);
       }
@@ -118,7 +135,15 @@ const qr = await qrSvg();
       back.toggleAttribute('inert', !flipped);
       front.setAttribute('aria-hidden', String(flipped));
       back.setAttribute('aria-hidden', String(!flipped));
-      if (!calm()) swing.kick(flipped ? 30 : -30);
+      // A small lift as it turns, then it holds still on whichever side faces you.
+      if (!calm()) {
+        card.classList.remove('lift');
+        void card.offsetWidth;
+        card.classList.add('lift');
+      }
+      Object.assign(swing.o, held);
+      swing.to(0);
+      navigator.vibrate?.(6);
       (flipped ? back : front).querySelector<HTMLElement>('[data-turn]')?.focus({ preventScroll: true });
     };
     card.addEventListener('click', (e) => {
@@ -170,6 +195,16 @@ const qr = await qrSvg();
   }
   .card:global(.flipped) {
     transform: rotateY(180deg);
+  }
+  .card:global(.lift) .face {
+    animation: lift 0.7s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  @keyframes lift {
+    40% {
+      box-shadow:
+        0 2px 3px rgba(0, 0, 0, 0.12),
+        0 24px 30px -12px rgba(0, 0, 0, 0.42);
+    }
   }
   .face {
     grid-area: 1 / 1;
@@ -278,7 +313,7 @@ const qr = await qrSvg();
     border: 1px solid #d9d0bf;
   }
 
-  @media (max-height: 820px) {
+  @media (max-height: 600px) {
     .lanyard {
       display: none;
     }

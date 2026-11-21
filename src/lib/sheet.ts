@@ -27,7 +27,7 @@ export function homeSheet(list: Project[]): DeskSheet {
     kicker: 'On this phone',
     title: `${c.total} apps`,
     rows,
-    foot: 'Open an app and this page turns to its build notes. Swipe the phone, or press → at the end of a row, for page two.',
+    foot: 'Open an app and this page turns to its build notes. Keys: arrows move, Esc goes home, L pulls the lamp, P is the power button.',
   };
 }
 

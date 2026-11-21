@@ -97,7 +97,9 @@ const { image, caption, back, href, name } = Astro.props;
   .print {
     display: grid;
     transform-style: preserve-3d;
-    transition: transform 0.7s cubic-bezier(0.32, 0.72, 0, 1);
+    /* It turns on its strip of tape, and swings a little as it settles. */
+    transform-origin: 50% 0;
+    transition: transform 0.8s cubic-bezier(0.34, 1.25, 0.64, 1);
   }
   .print:global(.flipped) {
     transform: rotateY(180deg);
@@ -222,7 +224,7 @@ const { image, caption, back, href, name } = Astro.props;
     cursor: pointer;
   }
 
-  @media (max-height: 820px), (max-width: 1099px) {
+  @media (max-height: 600px), (max-width: 1099px) {
     .polaroid {
       display: none;
     }

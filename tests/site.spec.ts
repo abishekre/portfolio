@@ -276,3 +276,70 @@ test('sticky note: writes an email with the note in it', async ({ page }) => {
   expect(decodeURIComponent(href!)).toContain('Loved Tally. Free for a call?');
   expect(decodeURIComponent(href!)).toContain('Priya');
 });
+
+test('edit mode: hold an icon, drag it, Done, and the order is kept', async ({ page }) => {
+  test.skip(isMobile(page), 'mouse drag; touch is covered by scripts/dev/debug-edit.mjs');
+  await page.goto('/');
+  const t = (await page.locator('a.app[href="/tally"]').boundingBox())!;
+  const k = (await page.locator('a.app[href="/kcal"]').boundingBox())!;
+  await page.mouse.move(t.x + 30, t.y + 30);
+  await page.mouse.down();
+  await page.waitForTimeout(700);
+  await page.mouse.up();
+  await expect(page.locator('[data-home]')).toHaveClass(/jiggle/);
+  await page.mouse.move(t.x + 30, t.y + 30);
+  await page.mouse.down();
+  for (let i = 1; i <= 10; i++) await page.mouse.move(t.x + 30 + ((k.x - t.x) * i) / 10, k.y + 30);
+  await page.mouse.up();
+  await expect(page.getByRole('button', { name: 'Reset' })).toBeVisible();
+  await page.getByRole('button', { name: 'Done' }).click();
+  await page.reload();
+  const first = await page.locator('[data-grid] [data-app]').first().getAttribute('href');
+  expect(first).not.toBe('/tally');
+});
+
+test('power button locks and wakes the phone', async ({ page }) => {
+  test.skip(isMobile(page), 'side buttons are on the desktop phone');
+  await page.goto('/');
+  const lock = page.getByRole('dialog', { name: 'Lock screen' });
+  await page.getByRole('button', { name: /Power button/ }).click();
+  await expect(lock).toBeVisible();
+  await page.getByRole('button', { name: /Power button/ }).click();
+  await expect(lock).toBeHidden();
+});
+
+test('Control Center is a solid panel (no frosted glass)', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: /Control Center/ }).click();
+  const sheet = page.locator('.cc-sheet');
+  await expect(sheet).toBeVisible();
+  expect(await sheet.evaluate((el) => getComputedStyle(el).backdropFilter)).toBe('none');
+});
+
+test('clipboard turns forward into an app and back coming home', async ({ page }) => {
+  test.skip(isMobile(page), 'the desk is a desktop thing');
+  await page.goto('/');
+  await page.locator('a.app[href="/kcal"]').click();
+  await expect(page.locator('[data-clipboard]')).toHaveAttribute('data-dir', 'forward');
+  await expect(page.locator('[data-pad]')).toHaveAttribute('data-turned', '1');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('[data-clipboard]')).toHaveAttribute('data-dir', 'back');
+  await expect(page.locator('[data-pad]')).toHaveAttribute('data-turned', '0');
+});
+
+test('ID card holds still under the cursor', async ({ page }) => {
+  test.skip(isMobile(page), 'the desk is a desktop thing');
+  await page.goto('/');
+  const card = page.locator('[data-idcard]');
+  const b = (await card.boundingBox())!;
+  // Sweep across the strap to set it swinging, then rest on the card.
+  for (let x = -60; x <= 60; x += 6) await page.mouse.move(b.x + b.width / 2 + x, b.y - 60);
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+  await page.waitForTimeout(900);
+  const a1 = await page.locator('[data-lanyard]').evaluate((el) => getComputedStyle(el).getPropertyValue('--a'));
+  await page.waitForTimeout(120);
+  const a2 = await page.locator('[data-lanyard]').evaluate((el) => getComputedStyle(el).getPropertyValue('--a'));
+  expect(Math.abs(parseFloat(a1) - parseFloat(a2))).toBeLessThan(0.05);
+  await page.getByRole('button', { name: /Turn the ID card over/ }).click();
+  await expect(card).toHaveClass(/flipped/);
+});

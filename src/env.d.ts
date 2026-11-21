@@ -6,6 +6,7 @@ interface Window {
   __lock?: (instant?: boolean) => void;
   __unlock?: () => void;
   __tick?: () => void;
+  __navDir?: 'forward' | 'back';
   __theme?: {
     mode: () => 'light' | 'dark' | 'auto';
     isDark: () => boolean;

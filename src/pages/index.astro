@@ -27,6 +27,7 @@ const timeline = [
 
   <main class="home" data-home>
     <button class="done" type="button" data-done>Done</button>
+    <button class="done reset" type="button" data-reset hidden>Reset</button>
 
     <div class="pages" data-pages>
       <section class="page" aria-label="Apps">
@@ -166,6 +167,8 @@ const timeline = [
 </Base>
 
 <script>
+  import { calm } from '../lib/spring';
+
   function init() {
     const home = document.querySelector<HTMLElement>('[data-home]');
     if (!home) return;
@@ -173,6 +176,16 @@ const timeline = [
     const grid = home.querySelector<HTMLElement>('[data-grid]')!;
     const workGrid = home.querySelector<HTMLElement>('[data-grid-work]')!;
     const dots = [...home.querySelectorAll<HTMLButtonElement>('[data-dot]')];
+    // For the unlock animation: how far each icon is from the middle of its grid.
+    home.querySelectorAll<HTMLElement>('.grid').forEach((g) => {
+      const items = [...g.children] as HTMLElement[];
+      const rows = Math.ceil(items.length / 4);
+      items.forEach((li, i) => {
+        const dx = (i % 4) - 1.5;
+        const dy = Math.floor(i / 4) - (rows - 1) / 2;
+        li.style.setProperty('--d', Math.hypot(dx, dy).toFixed(2));
+      });
+    });
 
     // Pages: native horizontal scrolling with snap; the dots follow and can be tapped.
     const current = () => Math.round(pages.scrollLeft / pages.clientWidth);
@@ -190,7 +203,7 @@ const timeline = [
     dots.forEach((d, i) => (d.onclick = () => goPage(i)));
 
     // Arrow keys: around the grid, and across to the other page at the edges.
-    const apps = [...grid.querySelectorAll<HTMLAnchorElement>('[data-app]')];
+    let apps = [...grid.querySelectorAll<HTMLAnchorElement>('[data-app]')];
     const work = () => [...workGrid.querySelectorAll<HTMLAnchorElement>('li:not([hidden]) [data-app]')];
     grid.onkeydown = (e) => {
       const i = apps.indexOf(document.activeElement as HTMLAnchorElement);
@@ -276,38 +289,97 @@ const timeline = [
     };
     document.addEventListener('pf:unlocked', peek, { once: true });
 
-    // Jiggle mode: long-press an icon with a mouse (on phones a long-press belongs to the browser),
-    // or the button in Notes. Done, Esc or a tap on the wallpaper ends it.
+    // Edit mode (the jiggle): press and hold any icon — mouse or finger — and the icons start to jiggle.
+    // Drag one to move it; the others slide out of the way. Done keeps your arrangement (in this
+    // browser); Reset puts it back. Arrow keys move the focused icon while editing.
+    const KEY = 'pf-order';
+    const lis = () => [...grid.children] as HTMLElement[];
+    const hrefOf = (li: Element) => li.querySelector('[data-app]')?.getAttribute('href') ?? '';
+    const defaultOrder = lis().map(hrefOf);
+    const resetBtn = home.querySelector<HTMLButtonElement>('[data-reset]')!;
+    const saved = (() => {
+      try {
+        return JSON.parse(localStorage.getItem(KEY) ?? 'null') as string[] | null;
+      } catch {
+        return null;
+      }
+    })();
+    const applyOrder = (order: string[]) => {
+      const byHref = new Map(lis().map((li) => [hrefOf(li), li]));
+      order.forEach((h) => byHref.get(h) && grid.append(byHref.get(h)!));
+      lis().forEach((li) => !order.includes(hrefOf(li)) && grid.append(li)); // new apps go at the end
+    };
+    if (saved) applyOrder(saved);
+    const isCustom = () => lis().map(hrefOf).join() !== defaultOrder.join();
+    const syncReset = () => (resetBtn.hidden = !isCustom());
+
+    // FLIP: move elements in the DOM, then animate each from where it was to where it is.
+    const flip = (change: () => void, skip?: HTMLElement) => {
+      const before = new Map(lis().map((li) => [li, li.getBoundingClientRect()]));
+      change();
+      if (calm()) return;
+      for (const li of lis()) {
+        if (li === skip) continue;
+        const a = before.get(li)!;
+        const b = li.getBoundingClientRect();
+        const dx = a.left - b.left;
+        const dy = a.top - b.top;
+        if (!dx && !dy) continue;
+        li.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], {
+          duration: 320,
+          easing: 'cubic-bezier(0.32, 0.72, 0, 1)',
+        });
+      }
+    };
+
     let timer = 0;
     let swallowClick = false;
     const start = () => {
+      if (home.classList.contains('jiggle')) return;
       home.classList.add('jiggle');
+      syncReset();
       window.__egg?.('jiggle');
       navigator.vibrate?.(12);
     };
-    const stop = () => home.classList.remove('jiggle');
+    const stop = () => {
+      if (!home.classList.contains('jiggle')) return;
+      home.classList.remove('jiggle');
+      try {
+        if (isCustom()) localStorage.setItem(KEY, JSON.stringify(lis().map(hrefOf)));
+        else localStorage.removeItem(KEY);
+      } catch {}
+      apps = [...grid.querySelectorAll<HTMLAnchorElement>('[data-app]')];
+    };
     try {
       if (sessionStorage.getItem('pf-jiggle')) {
         sessionStorage.removeItem('pf-jiggle');
         setTimeout(start, 500);
       }
     } catch {}
-    pages.onpointerdown = (e) => {
-      if (e.pointerType !== 'mouse' || !(e.target as HTMLElement).closest('[data-app]')) return;
+
+    // Press and hold (any pointer) to start; moving more than a few pixels means a scroll, not a hold.
+    let downX = 0;
+    let downY = 0;
+    pages.addEventListener('pointerdown', (e) => {
+      const app = (e.target as HTMLElement).closest('[data-app]');
+      if (!app || home.classList.contains('jiggle')) return;
+      downX = e.clientX;
+      downY = e.clientY;
       timer = window.setTimeout(() => {
         start();
         swallowClick = true;
-      }, 550);
-    };
+      }, 520);
+    });
     const cancel = () => clearTimeout(timer);
-    pages.onpointerup = cancel;
-    pages.onpointerleave = cancel;
-    pages.onpointermove = (e) => {
-      if (Math.abs(e.movementX) + Math.abs(e.movementY) > 6) cancel();
-    };
-    pages.oncontextmenu = (e) => {
-      if (home.classList.contains('jiggle')) e.preventDefault();
-    };
+    pages.addEventListener('pointerup', cancel);
+    pages.addEventListener('pointercancel', cancel);
+    pages.addEventListener('pointermove', (e) => {
+      if (Math.hypot(e.clientX - downX, e.clientY - downY) > 8) cancel();
+    });
+    // The browser's own long-press menu would cover the icons; on icons, holding means edit.
+    grid.addEventListener('contextmenu', (e) => {
+      if ((e.target as HTMLElement).closest('[data-app]')) e.preventDefault();
+    });
     pages.addEventListener(
       'click',
       (e) => {
@@ -319,9 +391,89 @@ const timeline = [
       },
       true,
     );
-    home.querySelector<HTMLButtonElement>('[data-done]')!.onclick = stop;
+
+    // Dragging an icon while editing.
+    let dragLi: HTMLElement | null = null;
+    let grabX = 0;
+    let grabY = 0;
+    const place = (e: PointerEvent) => {
+      const r = dragLi!.getBoundingClientRect();
+      const cur = new DOMMatrix(getComputedStyle(dragLi!).transform);
+      const baseX = r.left - cur.m41;
+      const baseY = r.top - cur.m42;
+      dragLi!.style.transform = `translate(${e.clientX - grabX - baseX}px, ${e.clientY - grabY - baseY}px) scale(1.12)`;
+    };
+    grid.addEventListener('pointerdown', (e) => {
+      if (!home.classList.contains('jiggle')) return;
+      const li = (e.target as HTMLElement).closest<HTMLElement>('li');
+      if (!li || !grid.contains(li)) return;
+      e.preventDefault();
+      dragLi = li;
+      const r = li.getBoundingClientRect();
+      grabX = e.clientX - r.left;
+      grabY = e.clientY - r.top;
+      li.classList.add('lifted');
+      li.setPointerCapture(e.pointerId);
+      place(e);
+    });
+    grid.addEventListener('pointermove', (e) => {
+      if (!dragLi) return;
+      place(e);
+      // Which slot is the pointer over? Move the icon there; the rest make room.
+      const over = lis().find((li) => {
+        if (li === dragLi) return false;
+        const r = li.getBoundingClientRect();
+        return e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+      });
+      if (!over) return;
+      const items = lis();
+      const from = items.indexOf(dragLi);
+      const to = items.indexOf(over);
+      flip(() => (from < to ? over.after(dragLi!) : over.before(dragLi!)), dragLi);
+      place(e);
+      syncReset();
+    });
+    const drop = () => {
+      if (!dragLi) return;
+      const li = dragLi;
+      dragLi = null;
+      li.classList.remove('lifted');
+      li.style.transition = 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
+      li.style.transform = '';
+      setTimeout(() => (li.style.transition = ''), 320);
+    };
+    grid.addEventListener('pointerup', drop);
+    grid.addEventListener('pointercancel', drop);
+
+    // Keyboard: while editing, arrows move the focused icon.
+    grid.addEventListener('keydown', (e) => {
+      if (!home.classList.contains('jiggle')) return;
+      const li = (document.activeElement as HTMLElement)?.closest('li');
+      if (!li || !grid.contains(li)) return;
+      const items = lis();
+      const i = items.indexOf(li);
+      const step = ({ ArrowRight: 1, ArrowLeft: -1, ArrowDown: 4, ArrowUp: -4 } as Record<string, number>)[e.key];
+      if (!step) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      const j = Math.max(0, Math.min(items.length - 1, i + step));
+      if (j === i) return;
+      flip(() => (j > i ? items[j].after(li) : items[j].before(li)));
+      li.querySelector<HTMLElement>('[data-app]')!.focus();
+      syncReset();
+    }, true);
+
+    resetBtn.onclick = (e) => {
+      e.stopPropagation();
+      flip(() => applyOrder(defaultOrder));
+      syncReset();
+    };
+    home.querySelector<HTMLButtonElement>('[data-done]')!.onclick = (e) => {
+      e.stopPropagation();
+      stop();
+    };
     home.onclick = (e) => {
-      if (home.classList.contains('jiggle') && !(e.target as HTMLElement).closest('[data-app], [data-done]')) stop();
+      if (home.classList.contains('jiggle') && !(e.target as HTMLElement).closest('[data-app], [data-done], [data-reset], li')) stop();
     };
     document.onkeydown = (e) => {
       if (e.key === 'Escape') stop();
@@ -462,13 +614,17 @@ const timeline = [
     -webkit-tap-highlight-color: transparent;
   }
   .app :global(.ic) {
-    transition: transform 0.18s var(--ease-out);
+    transition:
+      transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+      filter 0.2s ease;
   }
   .app:hover :global(.ic) {
     transform: translateY(-2px);
   }
   .app:active :global(.ic) {
-    transform: scale(0.92);
+    transform: scale(0.9);
+    filter: brightness(0.82);
+    transition-duration: 0.12s;
   }
   .lbl {
     font-size: 12px;
@@ -646,10 +802,12 @@ const timeline = [
     background: var(--wall-ink);
     opacity: 0.25;
     transition:
-      opacity 0.2s ease,
-      transform 0.2s ease;
+      opacity 0.25s ease,
+      width 0.35s cubic-bezier(0.34, 1.3, 0.64, 1);
   }
   .dot.on::before {
+    width: 18px;
+    border-radius: 4px;
     opacity: 0.85;
   }
   .pager-side:last-child {
@@ -679,14 +837,52 @@ const timeline = [
     transform: scale(0.92);
   }
 
-  /* Unlocking: the home screen settles in from slightly larger, like iOS. */
-  :global(html.unlocking) .pages {
-    animation: home-in 0.52s cubic-bezier(0.32, 0.72, 0, 1) both;
+  /* Control Center open: the home screen steps back a little behind it. */
+  .pages,
+  .pager,
+  .dock {
+    transition:
+      transform 0.45s cubic-bezier(0.32, 0.72, 0, 1),
+      filter 0.45s ease;
   }
-  @keyframes home-in {
+  :global(html.cc-open) .pages,
+  :global(html.cc-open) .pager,
+  :global(html.cc-open) .dock,
+  :global(html.locking) .pages,
+  :global(html.locking) .dock {
+    transform: scale(0.96);
+    filter: blur(2px) brightness(0.8);
+  }
+
+  /* Unlocking: icons settle in from the centre outwards (--d is set per icon), and the dock rises last. */
+  :global(html.unlocking) .grid li {
+    animation: icon-in 0.6s cubic-bezier(0.32, 0.72, 0, 1) both;
+    animation-delay: calc(var(--d, 0) * 110ms + 60ms);
+  }
+  :global(html.unlocking) .top,
+  :global(html.unlocking) .photo,
+  :global(html.unlocking) .work > :not(.grid) {
+    animation: fade-in 0.5s ease both 0.08s;
+  }
+  :global(html.unlocking) .dock {
+    animation: dock-in 0.55s cubic-bezier(0.32, 0.72, 0, 1) both 0.22s;
+  }
+  @keyframes icon-in {
+    from {
+      transform: scale(1.3);
+      opacity: 0;
+    }
+  }
+  @keyframes fade-in {
     from {
       transform: scale(1.06);
-      opacity: 0.4;
+      opacity: 0;
+    }
+  }
+  @keyframes dock-in {
+    from {
+      transform: translateY(28px);
+      opacity: 0;
     }
   }
 
@@ -719,6 +915,39 @@ const timeline = [
   }
   .home.jiggle .done {
     display: block;
+  }
+  .home.jiggle .done[hidden] {
+    display: none;
+  }
+  .reset {
+    right: auto;
+    left: 18px;
+    background: var(--dock);
+    color: var(--wall-ink);
+  }
+  /* Editing: icons can be dragged (no scrolling or swiping pages meanwhile); the one you hold lifts. */
+  .home.jiggle .grid {
+    touch-action: none;
+  }
+  .home.jiggle .pages {
+    overflow-x: hidden;
+  }
+  .grid li:global(.lifted) {
+    position: relative;
+    z-index: 5;
+    filter: drop-shadow(0 12px 14px rgba(0, 0, 0, 0.28));
+    cursor: grabbing;
+  }
+  .grid li:global(.lifted) :global(.ic) {
+    animation: none !important;
+  }
+  .home.jiggle .app {
+    cursor: grab;
+  }
+  .app {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
   }
   .home.jiggle .app :global(.ic) {
     animation: jig 0.26s ease-in-out infinite alternate;

@@ -14,4 +14,4 @@ It's an Astro site pretending to be a phone. Each app opens in its own colours a
 
 On a phone there's no frame: the page is the home screen, and Back or the Home button closes an app.
 
-On a computer, press and hold any icon on the home screen. On a phone, that press belongs to your browser, so there's a button for it below. Either way, you'll find out I couldn't resist.
+Press and hold any icon on the home screen and you can rearrange them, like on your own phone. The order you pick stays in your browser. And the phone has a power button on its right side.

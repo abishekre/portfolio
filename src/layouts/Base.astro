@@ -5,6 +5,7 @@ import Toast from '../components/Toast.astro';
 import Desk from '../components/Desk.astro';
 import DeskSheet from '../components/DeskSheet.astro';
 import ControlCenter from '../components/ControlCenter.astro';
+import PhoneButtons from '../components/PhoneButtons.astro';
 import { homeSheet, type DeskSheet as Sheet } from '../lib/sheet';
 import { allProjects } from '../lib/projects';
 import { RESUME } from '../lib/resume';
@@ -111,6 +112,9 @@ const person = {
           else delete root.dataset.calm;
           var z = innerWidth < 768 ? 1 : Math.min(1, (innerHeight - 56) / 866);
           root.style.setProperty('--z', z.toFixed(4));
+          // The desk is laid out for a 960px-tall window; shorter windows shrink it to fit, like the phone.
+          var dz = innerWidth >= 1100 ? Math.min(1, (innerHeight - 20) / 960) : 1;
+          root.style.setProperty('--dz', dz.toFixed(4));
         }
         // Open (home → an app with an icon) or close (app → home) picks the animation in global.css.
         // Only the icon being opened (or closed back into) is named "app", the same name
@@ -141,6 +145,8 @@ const person = {
         document.addEventListener('astro:before-preparation', function (e) {
           from = location.pathname;
           var to = e.to.pathname;
+          // Which way the clipboard on the desk turns: back when going home, forward otherwise.
+          window.__navDir = to === '/' ? 'back' : 'forward';
           if (from === '/') {
             var src = e.sourceElement && e.sourceElement.closest && e.sourceElement.closest('[data-app]');
             tapped = { path: to, index: src ? apps().indexOf(src) : -1 };
@@ -231,6 +237,7 @@ const person = {
     <div class="stage">
       <Desk sheet={sheet} />
       <div class="phone">
+        <PhoneButtons />
         <div class="screen" style={statusInk ? `--sb:${statusInk}` : undefined}>
           <StatusBar />
           <slot />
@@ -316,6 +323,7 @@ const person = {
   }
 
   .phone {
+    position: relative;
     zoom: var(--z, 1);
     align-self: center;
     width: 412px;
@@ -343,6 +351,7 @@ const person = {
     }
     .desk {
       min-height: 0;
+      zoom: var(--dz, 1);
     }
   }
 

@@ -1,6 +1,7 @@
 ---
-// A clipboard on the desk. It persists across pages; when a page carries a different sheet
-// (<template id="desk-sheet"> in Base.astro), the top page turns over the clip to reveal it.
+// A legal pad on a clipboard. It persists across pages. Opening an app turns the top page up over
+// the clip (it stays folded back there, a lip of paper behind the clip) to show that app's build notes;
+// going home brings the page back down. Every line of text sits on the 24px ruling.
 import DeskSheet from './DeskSheet.astro';
 import type { DeskSheet as Sheet } from '../lib/sheet';
 interface Props {
@@ -10,43 +11,64 @@ const { sheet } = Astro.props;
 ---
 
 <section class="board" data-clipboard aria-label="Notes on the clipboard" aria-live="polite">
+  <span class="lip" data-lip aria-hidden="true"><i></i><i></i><i></i></span>
   <span class="clip" aria-hidden="true"><i></i></span>
-  <div class="pages">
+  <div class="pad" data-pad data-turned="0">
+    <span class="edge e2" aria-hidden="true"></span>
+    <span class="edge e1" aria-hidden="true"></span>
     <div class="sheet current"><DeskSheet sheet={sheet} /></div>
   </div>
 </section>
 
 <script>
-  const calm = () => matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.dataset.calm === '1';
+  import { calm } from '../lib/spring';
 
   function turnTo() {
     const board = document.querySelector<HTMLElement>('[data-clipboard]');
     const tpl = document.querySelector<HTMLTemplateElement>('#desk-sheet');
     if (!board || !tpl) return;
-    const pages = board.querySelector<HTMLElement>('.pages')!;
+    const pad = board.querySelector<HTMLElement>('[data-pad]')!;
     const nextId = tpl.content.querySelector('[data-sheet-id]')?.getAttribute('data-sheet-id');
-    const top = pages.querySelector<HTMLElement>('.sheet.current');
-    if (!nextId || top?.querySelector('[data-sheet-id]')?.getAttribute('data-sheet-id') === nextId) return;
+    const top = pad.querySelector<HTMLElement>('.sheet.current');
+    if (!nextId || !top || top.querySelector('[data-sheet-id]')?.getAttribute('data-sheet-id') === nextId) return;
 
-    // Anything still turning from a quick earlier navigation: finish it now.
-    pages.querySelectorAll('.sheet.turning').forEach((s) => s.remove());
+    // Finish anything still moving from a quick earlier navigation.
+    pad.querySelectorAll('.sheet:not(.current)').forEach((s) => s.remove());
+    pad.querySelectorAll('.sheet').forEach((s) => s.classList.remove('turning-up', 'coming-down', 'revealed'));
 
-    if (!top) return;
-    // A blank copy of the top page (same scoped-style attributes), filled with the new sheet.
-    const under = top.cloneNode(false) as HTMLElement;
-    under.className = 'sheet current';
-    under.append(tpl.content.cloneNode(true));
-    pages.prepend(under); // underneath the old top page
+    const fresh = top.cloneNode(false) as HTMLElement; // same scoped-style attributes as the top page
+    fresh.className = 'sheet current';
+    fresh.append(tpl.content.cloneNode(true));
 
-    top.classList.remove('current');
+    const back = window.__navDir === 'back';
+    const turned = Number(pad.dataset.turned ?? 0);
+    pad.dataset.turned = String(Math.max(0, Math.min(3, turned + (back ? -1 : 1))));
+    board.dataset.dir = back ? 'back' : 'forward';
+
     if (calm()) {
-      top.remove();
+      top.replaceWith(fresh);
       return;
     }
-    top.classList.add('turning');
-    under.classList.add('revealing');
-    top.addEventListener('animationend', () => top.remove(), { once: true });
-    under.addEventListener('animationend', () => under.classList.remove('revealing'), { once: true });
+    top.classList.remove('current');
+    if (!back) {
+      // Forward: the new page is underneath; the top page turns up over the clip and stays there.
+      pad.insertBefore(fresh, top);
+      fresh.classList.add('revealed');
+      top.classList.add('turning-up');
+      top.addEventListener('animationend', () => top.remove(), { once: true });
+    } else {
+      // Back: a page comes down from behind the clip, on top of the current one.
+      top.after(fresh);
+      fresh.classList.add('coming-down');
+      fresh.addEventListener(
+        'animationend',
+        () => {
+          fresh.classList.remove('coming-down');
+          top.remove();
+        },
+        { once: true },
+      );
+    }
   }
 
   document.addEventListener('astro:after-swap', turnTo);
@@ -54,11 +76,12 @@ const { sheet } = Astro.props;
 
 <style>
   .board {
+    --rule: 24px;
     position: relative;
     width: 300px;
     /* Room for the lamp hanging above it. */
     margin-top: 168px;
-    padding: 34px 14px 16px;
+    padding: 34px 14px 18px;
     border-radius: 14px;
     /* Hardboard: warm brown with a fine grain. */
     background:
@@ -69,7 +92,7 @@ const { sheet } = Astro.props;
   }
   .clip {
     position: absolute;
-    z-index: 3;
+    z-index: 4;
     left: 50%;
     top: -10px;
     width: 116px;
@@ -92,151 +115,243 @@ const { sheet } = Astro.props;
     background: linear-gradient(#8d8d89, #c9c9c5);
     box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
   }
-  .pages {
+
+  /* Pages turned up over the clip: their backs show as a lip of paper above it, one per page. */
+  .lip {
+    position: absolute;
+    z-index: 3;
+    left: 22px;
+    right: 22px;
+    top: -2px;
+    height: 0;
+  }
+  .lip i {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 14px;
+    border-radius: 3px 3px 0 0;
+    background: linear-gradient(#efe9dc, #e2dacb);
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.12);
+    transform-origin: 50% 100%;
+    transform: scaleY(0);
+    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .lip i:nth-child(2) {
+    left: 3px;
+    right: 3px;
+    bottom: 3px;
+  }
+  .lip i:nth-child(3) {
+    left: 6px;
+    right: 6px;
+    bottom: 6px;
+  }
+  .board:has([data-turned='1']) .lip i:nth-child(1),
+  .board:has([data-turned='2']) .lip i:nth-child(-n + 2),
+  .board:has([data-turned='3']) .lip i {
+    transform: scaleY(1);
+    transition-delay: 0.42s;
+  }
+
+  .pad {
     position: relative;
     display: grid;
-    perspective: 2600px;
+    perspective: 1800px;
     perspective-origin: 50% 0;
   }
+  /* The rest of the pad, peeking out below the top page. */
+  .edge {
+    grid-area: 1 / 1;
+    background: #f1ece1;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
+  }
+  .e1 {
+    transform: translate(1px, 3px);
+  }
+  .e2 {
+    transform: translate(2px, 6px);
+    background: #e6e0d3;
+  }
+
   .sheet {
     grid-area: 1 / 1;
     position: relative;
     /* Fixed, so turning to a longer sheet never moves anything else on the desk. */
-    height: 404px;
+    height: calc(var(--rule) * 17);
     overflow: hidden;
-    padding: 22px 20px 18px;
+    padding: calc(var(--rule) * 1) 16px 0 46px;
+    /* Ruled like a legal pad: blue lines on the grid, and a red margin line. */
     background:
-      repeating-linear-gradient(0deg, transparent 0 25px, rgba(60, 90, 140, 0.08) 25px 26px),
-      #fbf9f4;
+      linear-gradient(90deg, transparent 33px, rgba(205, 70, 60, 0.45) 33px 34px, transparent 34px),
+      repeating-linear-gradient(to bottom, transparent 0 calc(var(--rule) - 1px), rgba(70, 110, 170, 0.2) calc(var(--rule) - 1px) var(--rule)),
+      #fbf9f2;
+    background-position: 0 0, 0 calc(var(--rule) * 1);
     color: #221e18;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
     transform-origin: 50% 0;
-    backface-visibility: hidden;
   }
-  .sheet.turning {
+  /* A page turning up: lifts towards you, passes edge-on, and goes behind the clip. */
+  .sheet.turning-up {
     z-index: 2;
-    animation: turn 0.7s cubic-bezier(0.45, 0.05, 0.25, 1) forwards;
+    animation: turn-up 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   }
-  /* As the page lifts towards you it catches the light, then turns edge-on and darkens. */
-  .sheet.turning::after {
+  .sheet.revealed {
+    animation: under 0.6s ease-out;
+  }
+  /* A page coming back down over the pad. */
+  .sheet.coming-down {
+    z-index: 2;
+    animation: come-down 0.6s cubic-bezier(0.3, 0, 0.2, 1) both;
+  }
+  .sheet.turning-up::after,
+  .sheet.coming-down::after {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(40, 30, 20, 0.35));
-    animation: shade 0.7s ease-in forwards;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.15), rgba(60, 45, 30, 0.3));
+    opacity: 0;
+    animation: shade 0.6s ease-in-out;
   }
-  @keyframes shade {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-  .sheet.revealing {
-    animation: reveal 0.62s ease-out;
-  }
-  @keyframes turn {
+  @keyframes turn-up {
     0% {
       transform: rotateX(0deg);
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
     }
-    40% {
-      box-shadow: 0 40px 40px -16px rgba(0, 0, 0, 0.3);
+    45% {
+      box-shadow: 0 36px 36px -18px rgba(0, 0, 0, 0.32);
     }
     100% {
-      transform: rotateX(92deg);
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0);
+      transform: rotateX(94deg);
+      box-shadow: 0 0 0 rgba(0, 0, 0, 0);
     }
   }
-  @keyframes reveal {
+  @keyframes come-down {
+    0% {
+      transform: rotateX(94deg);
+    }
+    80% {
+      transform: rotateX(-2deg);
+    }
+    100% {
+      transform: rotateX(0deg);
+    }
+  }
+  @keyframes under {
     from {
-      filter: brightness(0.86);
+      filter: brightness(0.88);
+    }
+  }
+  @keyframes shade {
+    50% {
+      opacity: 1;
     }
   }
 
-  .sheet :global(.k) {
+  /* Everything on the sheet sits on the ruling: each line is one rule (24px) tall. */
+  .sheet :global(.sheet-body) {
+    font-size: 13px;
+    line-height: var(--rule);
+  }
+  .sheet :global(p),
+  .sheet :global(dl),
+  .sheet :global(ul) {
     margin: 0;
-    font: 600 12px/1 var(--ui);
-    color: #8a5a1f;
+  }
+  .sheet :global(.k) {
+    font: 600 12px/var(--rule) var(--sys);
+    color: #9a4a1c;
   }
   .sheet :global(.t) {
-    margin: 8px 0 0;
-    font: 400 34px/1 var(--serif);
+    /* Two rules tall, with the baseline sitting on the second line. */
+    font: 400 36px/calc(var(--rule) * 2) var(--serif);
+    height: calc(var(--rule) * 2);
+    padding-top: 3px;
   }
   .sheet :global(.s) {
-    margin: 6px 0 0;
-    font-size: 13px;
+    font-size: 12.5px;
     color: #6f675b;
   }
   .sheet :global(.chips) {
-    margin: 14px 0 0;
     padding: 0;
     list-style: none;
     display: flex;
     flex-wrap: wrap;
-    gap: 5px;
+    column-gap: 5px;
   }
   .sheet :global(.chips li) {
-    padding: 3px 8px;
+    height: 20px;
+    margin: 2px 0;
+    padding: 0 8px;
     border: 1px solid #d9d0bf;
     border-radius: 999px;
-    font-size: 12px;
     background: #fff;
-  }
-  .sheet :global(dl) {
-    margin: 14px 0 0;
-    display: grid;
-    gap: 8px;
+    font-size: 11.5px;
+    line-height: 18px;
   }
   .sheet :global(dl div) {
     display: flex;
     justify-content: space-between;
     gap: 12px;
-    padding-bottom: 7px;
-    border-bottom: 1px dashed #ddd3c2;
   }
   .sheet :global(dt) {
-    font-size: 12.5px;
     color: #6f675b;
+    white-space: nowrap;
   }
   .sheet :global(dd) {
     margin: 0;
-    font-size: 13px;
     font-weight: 500;
     text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .sheet :global(.links) {
-    margin: 16px 0 0;
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 0 6px;
+    padding: 8px 0;
   }
   .sheet :global(.links a) {
-    padding: 8px 12px;
+    height: 32px;
+    padding: 0 12px;
     border-radius: 999px;
     border: 1px solid #cfc5b3;
-    font-size: 13px;
-    font-weight: 600;
+    background: #fffdf8;
+    font: 600 12.5px/30px var(--ui);
     color: #221e18;
     text-decoration: none;
+    transition:
+      transform 0.15s ease,
+      background 0.15s ease;
+  }
+  .sheet :global(.links a:hover) {
+    transform: translateY(-1px);
   }
   .sheet :global(.links a.primary) {
     background: #221e18;
     border-color: #221e18;
-    color: #fbf9f4;
+    color: #fbf9f2;
   }
   .sheet :global(.f) {
-    margin: 16px 0 0;
     font-size: 12px;
-    line-height: 1.5;
     color: #8a8072;
   }
 
   @media (max-width: 1099px) {
     .board {
       width: 100%;
+      margin-top: 0;
       transform: none;
+    }
+    .lip {
+      display: none;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sheet {
+      animation: none !important;
     }
   }
 </style>

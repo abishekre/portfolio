@@ -17,7 +17,7 @@ export class Spring {
   target = 0;
   private raf = 0;
   private last = 0;
-  constructor(private o: SpringOptions) {}
+  constructor(public o: SpringOptions) {}
 
   /** Jump straight to a value (no animation). */
   set(value: number) {
