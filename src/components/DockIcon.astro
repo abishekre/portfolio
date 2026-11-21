@@ -3,12 +3,11 @@
 interface Props {
   kind: 'resume' | 'mail' | 'github' | 'linkedin' | 'notes';
   size?: number;
-  morph?: string;
 }
-const { kind, size = 62, morph } = Astro.props;
+const { kind, size = 62 } = Astro.props;
 ---
 
-<span class="ic" style={`--s:${size}px`} transition:name={morph} aria-hidden="true">
+<span class="ic" style={`--s:${size}px`} aria-hidden="true">
   {
     kind === 'resume' && (
       <svg viewBox="0 0 60 60">

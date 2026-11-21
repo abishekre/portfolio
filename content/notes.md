@@ -12,6 +12,6 @@ Everything on this phone is something I designed and built myself, except Dazzle
 
 It's an Astro site pretending to be a phone. Each app opens in its own colours and fonts, taken from the real app. The clock is Kochi time, and after 7 pm the wallpaper goes lamp-lit.
 
-On a phone there's no frame: the page is the home screen. Pull an app down to close it.
+On a phone there's no frame: the page is the home screen, and Back or the Home button closes an app.
 
-And if you press and hold any icon on the home screen, you'll find out I couldn't resist.
+On a computer, press and hold any icon on the home screen. You'll find out I couldn't resist.

@@ -18,6 +18,9 @@
   --mono: 'Space Mono', ui-monospace, Consolas, monospace;
 
   --ease-out: cubic-bezier(0.2, 0.9, 0.25, 1);
+  /* Corner of an icon, and of the phone's screen; an opening app morphs between them. */
+  --icon-r: 14px;
+  --screen-r: 51px;
   color-scheme: light;
 }
 
@@ -81,14 +84,112 @@ img {
   white-space: nowrap;
 }
 
-/* View-transition timing: a quick, settling morph like a real phone. */
+/* Opening and closing apps, like a phone: the icon grows into the app while the
+   rest of the screen holds still, then shrinks back on the way out. data-vt is
+   set by Base.astro before each navigation: open (home → app), close (app → home). */
 ::view-transition-group(*) {
-  animation-duration: 0.48s;
-  animation-timing-function: var(--ease-out);
+  animation-duration: 0.44s;
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
 }
+/* The desk's tint blends across the whole change. */
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation-duration: 0.3s;
+  animation-duration: 0.44s;
+}
+/* Desk notes: the old ones lift away, the new ones settle in just after. */
+::view-transition-old(desk-l),
+::view-transition-old(desk-r) {
+  animation: vt-out 0.18s ease-in both, vt-lift 0.18s ease-in both;
+}
+::view-transition-new(desk-l),
+::view-transition-new(desk-r) {
+  animation: vt-in 0.32s 0.14s ease-out both, vt-settle 0.42s 0.14s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+@keyframes vt-lift {
+  to {
+    transform: translateY(-8px);
+  }
+}
+@keyframes vt-settle {
+  from {
+    transform: translateY(10px);
+  }
+}
+/* The screen behind holds still and dims, like iOS; only the app moves. */
+:root[data-vt='open']::view-transition-old(screen) {
+  animation: vt-recede 0.44s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+:root[data-vt='close']::view-transition-new(screen) {
+  animation: vt-recede 0.44s cubic-bezier(0.32, 0.72, 0, 1) reverse both;
+}
+@keyframes vt-recede {
+  to {
+    filter: brightness(0.7);
+  }
+}
+:root[data-vt='open']::view-transition-new(screen),
+:root[data-vt='close']::view-transition-old(screen) {
+  animation: none;
+  opacity: 0;
+}
+/* The corners turn from the icon's into the screen's as it grows, so nothing snaps at the end. */
+::view-transition-image-pair(app) {
+  overflow: hidden;
+  border-radius: var(--screen-r);
+}
+:root[data-vt='open']::view-transition-image-pair(app) {
+  animation: vt-corners 0.44s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+:root[data-vt='close']::view-transition-image-pair(app) {
+  animation: vt-corners 0.44s cubic-bezier(0.32, 0.72, 0, 1) reverse both;
+}
+@keyframes vt-corners {
+  from {
+    border-radius: var(--icon-r);
+  }
+  to {
+    border-radius: var(--screen-r);
+  }
+}
+/* The status bar rides above everything and just changes ink. */
+::view-transition-group(statusbar) {
+  z-index: 10;
+}
+/* Opening: the app is solid from the first frame (no ghosting); the icon melts away on top. */
+:root[data-vt='open']::view-transition-old(app) {
+  animation: vt-out 0.1s linear both;
+}
+:root[data-vt='open']::view-transition-new(app) {
+  animation: none;
+}
+:root[data-vt='close']::view-transition-old(app) {
+  animation: vt-out 0.2s 0.1s linear both;
+}
+:root[data-vt='close']::view-transition-new(app) {
+  animation: vt-in 0.18s 0.14s linear both;
+}
+@keyframes vt-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes vt-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Taps feel physical: no grey flash, a small press instead. */
+a,
+button {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+@media (max-width: 767px) {
+  :root {
+    --screen-r: 0px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

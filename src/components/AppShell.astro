@@ -28,7 +28,7 @@ const vars = [
 ].join(';');
 ---
 
-<article class="appview" style={vars} transition:name={`app-${slug}`} data-appview aria-label={label}>
+<article class="appview" style={vars} transition:name="app" data-appview aria-label={label}>
   <nav class="bar">
     <a href="/" class="back" data-home>
       <svg viewBox="0 0 12 20" aria-hidden="true"><path d="M10 2 2 10l8 8" /></svg>
@@ -61,46 +61,6 @@ const vars = [
         goHome();
       }
     };
-
-    // Pull down from the top to close, on touch screens.
-    let startY = 0;
-    let dy = 0;
-    let pulling = false;
-    view.addEventListener(
-      'touchstart',
-      (e) => {
-        if (view.scrollTop > 0) return;
-        startY = e.touches[0].clientY;
-        dy = 0;
-        pulling = true;
-        view.style.transition = 'none';
-      },
-      { passive: true },
-    );
-    view.addEventListener(
-      'touchmove',
-      (e) => {
-        if (!pulling) return;
-        dy = Math.max(0, e.touches[0].clientY - startY);
-        if (dy > 0 && view.scrollTop <= 0) {
-          const d = dy * 0.55;
-          view.style.transform = `translateY(${d}px) scale(${1 - Math.min(d, 260) / 1600})`;
-          view.style.borderRadius = `${Math.min(d / 3, 40)}px`;
-        }
-      },
-      { passive: true },
-    );
-    view.addEventListener('touchend', () => {
-      if (!pulling) return;
-      pulling = false;
-      if (dy > 120) {
-        goHome();
-        return;
-      }
-      view.style.transition = 'transform .35s cubic-bezier(.2,.9,.25,1), border-radius .35s';
-      view.style.transform = '';
-      view.style.borderRadius = '';
-    });
   }
   document.addEventListener('astro:page-load', init);
 </script>
@@ -110,12 +70,10 @@ const vars = [
     position: absolute;
     inset: 0;
     overflow-y: auto;
-    overscroll-behavior: contain;
     scrollbar-width: none;
     background: var(--app-bg);
     color: var(--app-fg);
     font-family: var(--app-body);
-    will-change: transform;
   }
   .appview::-webkit-scrollbar {
     display: none;

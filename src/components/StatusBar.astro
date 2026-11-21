@@ -12,10 +12,10 @@ import { SITE } from '../site';
   if (!window.__clockStarted) {
     window.__clockStarted = true;
     const fmt = new Intl.DateTimeFormat('en-GB', { hour: 'numeric', minute: '2-digit', hourCycle: 'h12', timeZone: 'Asia/Kolkata' });
-    const tick = () => {
+    const tick = (window.__tick = () => {
       const t = fmt.format(new Date()).replace(/\s?[ap]m/i, '');
       document.querySelectorAll('[data-clock]').forEach((el) => (el.textContent = t));
-    };
+    });
     tick();
     setInterval(tick, 15000);
     document.addEventListener('astro:page-load', tick);
@@ -48,6 +48,8 @@ import { SITE } from '../site';
 
 <style>
   .statusbar {
+    /* Its own layer, so it stays on top while an app opens or closes. */
+    view-transition-name: statusbar;
     position: absolute;
     z-index: 20;
     inset: 0 0 auto;

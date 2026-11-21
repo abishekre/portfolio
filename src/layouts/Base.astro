@@ -20,7 +20,7 @@ const { title, description, fonts, tint, statusInk, ogImage = '/og/home.png' } =
 const fontHref =
   'https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;600;700&family=Space+Mono:wght@400;700' +
   (fonts ? `&${fonts}` : '') +
-  '&display=swap';
+  '&display=fallback';
 const canonical = new URL(Astro.url.pathname, Astro.site);
 ---
 
@@ -61,12 +61,44 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
           var z = innerWidth < 768 ? 1 : Math.min(1, (innerHeight - 56) / 866);
           root.style.setProperty('--z', z.toFixed(4));
         }
+        // Open (home → an app with an icon) or close (app → home) picks the animation in global.css.
+        // Only the icon being opened (or closed back into) is named "app", the same name
+        // AppShell gives the open app, so exactly one thing morphs in every browser.
+        var vt = '';
+        var from = '';
+        function setVt() {
+          if (vt) document.documentElement.dataset.vt = vt;
+          else delete document.documentElement.dataset.vt;
+        }
+        function nameIcon(path) {
+          var icon = document.querySelector('[data-app][href="' + path + '"] .ic');
+          if (icon) icon.style.viewTransitionName = 'app';
+          return !!icon;
+        }
+        document.addEventListener('astro:before-preparation', function (e) {
+          from = location.pathname;
+          var to = e.to.pathname;
+          vt = from === '/' && nameIcon(to) ? 'open' : to === '/' && from !== '/' ? 'close' : '';
+          setVt();
+        });
         apply();
         addEventListener('resize', apply);
-        document.addEventListener('astro:after-swap', apply);
+        document.addEventListener('astro:after-swap', function () {
+          apply();
+          if (vt === 'close' && !nameIcon(from)) vt = '';
+          setVt();
+        });
+        // Clear the name once the animation is over, so the next tap starts clean.
+        document.addEventListener('astro:page-load', function () {
+          setTimeout(function () {
+            document.querySelectorAll('[data-app] .ic').forEach(function (el) {
+              el.style.viewTransitionName = '';
+            });
+          }, 700);
+        });
       })();
     </script>
-    <ClientRouter />
+    <ClientRouter fallback="swap" />
   </head>
   <body>
     <div class="stage" style={tint ? `--tint:${tint}` : undefined}>
@@ -83,6 +115,8 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
         <slot name="right" />
       </aside>
     </div>
+    <!-- Real time in every clock before the first paint, not a 9:41 placeholder. -->
+    <script is:inline>window.__tick && window.__tick();</script>
   </body>
 </html>
 
@@ -99,6 +133,17 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
   }
   .stage[style*='--tint'] {
     background: color-mix(in oklab, var(--desk) 86%, var(--tint));
+  }
+
+  /* Separate layers for page changes: the screen (see global.css), and each side of the desk. */
+  .screen {
+    view-transition-name: screen;
+  }
+  .desk-l {
+    view-transition-name: desk-l;
+  }
+  .desk-r {
+    view-transition-name: desk-r;
   }
 
   .desk {

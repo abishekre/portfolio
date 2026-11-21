@@ -50,7 +50,7 @@ const photo = photoOf?.screens[(SITE.photo?.screen ?? 1) - 1];
         projects.map((p) => (
           <li>
             <a class="app" href={`/${p.id}`} data-app>
-              <AppIcon icon={p.icon} morph={`app-${p.id}`} />
+              <AppIcon icon={p.icon} />
               <span class="lbl">{p.data.label ?? p.data.name}</span>
             </a>
           </li>
@@ -58,7 +58,7 @@ const photo = photoOf?.screens[(SITE.photo?.screen ?? 1) - 1];
       }
       <li>
         <a class="app" href="/notes" data-app>
-          <DockIcon kind="notes" morph="app-notes" />
+          <DockIcon kind="notes" />
           <span class="lbl">Notes</span>
         </a>
       </li>
@@ -79,7 +79,7 @@ const photo = photoOf?.screens[(SITE.photo?.screen ?? 1) - 1];
     <a class="all" href="/list">All projects as a list</a>
 
     <nav class="dock" aria-label="Contact">
-      <a href="/resume" aria-label="Résumé" data-app><DockIcon kind="resume" morph="app-resume" /></a>
+      <a href="/resume" aria-label="Résumé" data-app><DockIcon kind="resume" /></a>
       <a href={`mailto:${SITE.email}`} aria-label="Email"><DockIcon kind="mail" /></a>
       <a href={SITE.github} aria-label="GitHub" rel="me noopener" target="_blank"><DockIcon kind="github" /></a>
       <a href={SITE.linkedin} aria-label="LinkedIn" rel="me noopener" target="_blank"><DockIcon kind="linkedin" /></a>
@@ -120,7 +120,8 @@ const photo = photoOf?.screens[(SITE.photo?.screen ?? 1) - 1];
     let swallowClick = false;
     const stop = () => home.classList.remove('jiggle');
     grid.onpointerdown = (e) => {
-      if (!(e.target as HTMLElement).closest('[data-app]')) return;
+      // Mouse only: on phones a long-press belongs to the browser (link preview menu).
+      if (e.pointerType !== 'mouse' || !(e.target as HTMLElement).closest('[data-app]')) return;
       timer = window.setTimeout(() => {
         home.classList.add('jiggle');
         swallowClick = true;
@@ -134,7 +135,7 @@ const photo = photoOf?.screens[(SITE.photo?.screen ?? 1) - 1];
       if (Math.abs(e.movementX) + Math.abs(e.movementY) > 6) cancel();
     };
     grid.oncontextmenu = (e) => {
-      if ((e.target as HTMLElement).closest('[data-app]')) e.preventDefault();
+      if (home.classList.contains('jiggle')) e.preventDefault();
     };
     grid.addEventListener(
       'click',

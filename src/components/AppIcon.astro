@@ -5,13 +5,11 @@ import type { ImageMetadata } from 'astro';
 interface Props {
   icon: ImageMetadata;
   size?: number;
-  /** Shared-element name; set only where the icon should morph. */
-  morph?: string;
 }
-const { icon, size = 62, morph } = Astro.props;
+const { icon, size = 62 } = Astro.props;
 ---
 
-<span class="ic" style={`--s:${size}px`} transition:name={morph}>
+<span class="ic" style={`--s:${size}px`}>
   <Image src={icon} alt="" width={size * 2} height={size * 2} loading="eager" />
 </span>
 
