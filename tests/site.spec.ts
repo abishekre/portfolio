@@ -1,13 +1,14 @@
 import { test, expect, type Page } from '@playwright/test';
-import { readdirSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 
-// Every project, with its display name, read from the content files.
-const projects = readdirSync('content/projects')
-  .map((slug) => {
+// The apps switched on in content/home.yaml, in order, with their display names.
+const projects = [...readFileSync('content/home.yaml', 'utf8').matchAll(/- \{ app: ([\w-]+), show: (true|false) \}/g)]
+  .filter((m) => m[2] === 'true')
+  .map(([, slug]) => {
     const src = readFileSync(`content/projects/${slug}/project.md`, 'utf8');
-    return { slug, name: /^name: (.+)$/m.exec(src)![1].trim(), hidden: /^hidden: true$/m.test(src) };
-  })
-  .filter((p) => !p.hidden);
+    const field = (k: string) => new RegExp(`^${k}: (.+)$`, 'm').exec(src)?.[1].trim();
+    return { slug, name: field('name')!, links: ['playStore', 'web', 'github'].filter((k) => field(k)) };
+  });
 
 const isMobile = (page: Page) => (page.viewportSize()?.width ?? 0) < 768;
 
@@ -71,6 +72,8 @@ test.describe('apps', () => {
       expect(res?.status()).toBe(200);
       await expect(page.getByRole('heading', { level: 1, name: p.name })).toBeVisible();
       await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', new RegExp(`/og/${p.slug}\\.png$`));
+      // Buttons follow the link rule: Play Store, then web, then GitHub; none if it has none.
+      await expect(page.locator('.appview .links .btn')).toHaveCount(p.links.length);
       const notes = page.locator('.in-app-notes');
       if (isMobile(page)) await expect(notes).toBeVisible();
       else await expect(notes).toBeHidden();
@@ -106,4 +109,9 @@ test('sitemap lists every project', async ({ request }) => {
   const xml = await (await request.get('/sitemap.xml')).text();
   for (const p of projects) expect(xml).toContain(`/${p.slug}</loc>`);
   expect(xml).not.toContain('/og/');
+});
+
+test('/hearth now goes to /lumen', async () => {
+  const v = JSON.parse(readFileSync('vercel.json', 'utf8'));
+  expect(v.redirects).toContainEqual({ source: '/hearth', destination: '/lumen', permanent: true });
 });

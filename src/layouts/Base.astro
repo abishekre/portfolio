@@ -48,14 +48,14 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <script is:inline>
       // Runs before paint and after every client-side page swap.
       (function () {
-        function kochiHour() {
+        function istHour() {
           return Number(
             new Intl.DateTimeFormat('en-GB', { hour: 'numeric', hourCycle: 'h23', timeZone: 'Asia/Kolkata' }).format(new Date()),
           );
         }
         function apply() {
           var root = document.documentElement;
-          var h = kochiHour();
+          var h = istHour();
           var dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
           root.dataset.time = dark || h < 6 || h >= 19 ? 'night' : 'day';
           var z = innerWidth < 768 ? 1 : Math.min(1, (innerHeight - 56) / 866);

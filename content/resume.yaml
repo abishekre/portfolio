@@ -1,0 +1,58 @@
+# Your résumé. This one file feeds the Work and Résumé apps on the phone and the PDF.
+# After editing, run `npm run resume` to remake public/resume.pdf.
+# Clients are described by industry, never by name.
+
+headline: Associate Technical Consultant at Salesforce
+location: Bengaluru · from Thrissur, Kerala
+summary: >-
+  I implement Informatica master data management for enterprise customers, mostly
+  Product 360, with ActiveVOS and Data Quality around it. Outside work I design,
+  build and ship my own apps, from an SMS expense tracker on Google Play to a 3D
+  Bengaluru in the browser.
+
+experience:
+  - company: Salesforce
+    role: Associate Technical Consultant
+    start: 2026-03
+    place: Bengaluru
+    points:
+      - Implementing Informatica Product 360, ActiveVOS and IDQ for enterprise customers.
+    tools: [Product 360, ActiveVOS, IDQ]
+  - company: Informatica
+    role: Associate Consultant
+    start: 2023-07
+    end: 2026-03
+    place: Bengaluru
+    points:
+      - Delivered Product 360 implementations for a Swedish foodservice distributor, a global electrification and automation company and an Australian drinks retailer.
+      - Worked on master data management for a large Indian private-sector bank.
+      - Worked across ActiveVOS and IDQ alongside those implementations.
+      # TODO(Abishek): one line on each internal utility you built, e.g. what it did and who used it.
+      - Built several internal utilities used across the consulting team.
+    tools: [Product 360, ActiveVOS, IDQ, MDM]
+
+# Side projects on the one-page PDF (folders in content/projects), in this order.
+# The phone's Résumé app lists every app on the home screen.
+projects: [tally, streets, kcal, bytwo, lumen, rally]
+
+# Engagements, by industry. Shown in the Work app.
+clients:
+  - { industry: Foodservice distribution, region: Sweden, product: Product 360 }
+  - { industry: Electrification and automation, region: Global, product: Product 360 }
+  - { industry: Drinks retail, region: Australia, product: Product 360 }
+  - { industry: Banking, region: India, product: MDM }
+
+skills:
+  Informatica: Product 360, ActiveVOS, Data Quality (IDQ), MDM
+  Languages: TypeScript, JavaScript, Kotlin, Rust, Python, SQL
+  Apps: React Native and Expo, React, Astro, Jetpack Compose, Supabase and Postgres, SQLite
+  Practice: Offline-first sync, row-level security, Playwright, Vitest, GitHub Actions, Vercel
+
+education:
+  - school: BITS Pilani (Work Integrated Learning Programmes)
+    degree: M.Tech, Artificial Intelligence and Machine Learning
+    start: 2026-06
+  - school: Rajagiri School of Engineering & Technology
+    degree: B.Tech, Computer Science
+    start: 2019
+    end: 2023

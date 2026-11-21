@@ -1,8 +1,7 @@
 ---
 name: Rally
-order: 9
 tagline: Fair doubles rotations for a weekend badminton group.
-status: Installable web app
+status: Live on the web
 theme:
   bg: '#EBF1EC'
   fg: '#10231F'
@@ -18,6 +17,8 @@ stats:
   - { value: '0', label: servers. It works offline. }
 what: Twelve people, two courts, and someone always ends up partnering the same friend. Rally decides who plays next so everyone gets fair games and new partners.
 hardTitle: Fairness as a cost function
+web: https://rally.abishekre.in
+github: https://github.com/abishekre/Rally
 screensAlt: Rally's court and roster screens
 notes:
   stack: [React, Vite, TypeScript, Tailwind, Zustand, Framer Motion]

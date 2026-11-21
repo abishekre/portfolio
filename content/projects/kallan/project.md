@@ -1,8 +1,7 @@
 ---
 name: Kallan
-order: 6
 tagline: A Malayali pass-the-phone party game. Find the kallan before they find the word.
-status: Coming to Google Play
+status: In testing · coming to Google Play
 theme:
   bg: '#FFCB47'
   fg: '#1A1411'

@@ -1,8 +1,7 @@
 ---
 name: Deuce
-order: 8
 tagline: The referee scores on a phone. The whole hall follows live.
-status: In beta
+status: Built · its live database is switched off for now
 theme:
   bg: '#F3F1EB'
   fg: '#17191C'
@@ -17,8 +16,7 @@ stats:
   - { value: 'Live', label: public link for spectators }
 what: "Tournament software for small badminton organisers. A referee taps point by point, spectators follow on a public link, and it keeps working when the sports-hall wifi doesn't."
 hardTitle: "A score you can't corrupt"
-links:
-  - { label: Open deuce-olive.vercel.app, href: 'https://deuce-olive.vercel.app', primary: true }
+github: https://github.com/abishekre/Deuce
 screensAlt: Deuce's new-match screen
 notes:
   stack: [Expo, React Native Web, Supabase Realtime, TanStack Query, expo-sqlite, Workbox]

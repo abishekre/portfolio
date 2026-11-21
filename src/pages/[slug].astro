@@ -6,7 +6,7 @@ import AppShell from '../components/AppShell.astro';
 import AppIcon from '../components/AppIcon.astro';
 import BuildNotes from '../components/BuildNotes.astro';
 import IndexCard from '../components/IndexCard.astro';
-import { allProjects, isPlayStore, ogImageFor, type Project } from '../lib/projects';
+import { allProjects, ogImageFor, type Project } from '../lib/projects';
 import { SITE } from '../site';
 
 export async function getStaticPaths() {
@@ -58,6 +58,44 @@ const { Content } = await render(project);
       )
     }
 
+    {
+      project.screens.length === 0 && d.design && (
+        <section class="design" aria-label={`${d.name} design system`}>
+          <p class="eyebrow">Design system</p>
+          {d.design.title && <p class="d-title">{d.design.title}</p>}
+          <ul class="swatches">
+            {d.design.swatches.map((c) => (
+              <li>
+                <span class="chip" style={`background:${c.value}`} />
+                <b>{c.name}</b>
+                <code>{c.value}</code>
+                {c.note && <small>{c.note}</small>}
+              </li>
+            ))}
+          </ul>
+          <ul class="type">
+            {d.design.type.map((t) => (
+              <li>
+                <span class="sample" style={`font-family:'${t.family}',system-ui,sans-serif;font-weight:${t.weight};font-size:${t.size}px`}>
+                  {t.sample}
+                </span>
+                <small>
+                  {t.name} · {t.family} {t.weight}
+                </small>
+              </li>
+            ))}
+          </ul>
+          {d.design.rules.length > 0 && (
+            <ol class="rules">
+              {d.design.rules.map((rule) => (
+                <li>{rule}</li>
+              ))}
+            </ol>
+          )}
+        </section>
+      )
+    }
+
     <ul class="stats">
       {
         d.stats.map((s) => (
@@ -81,9 +119,9 @@ const { Content } = await render(project);
     </section>
 
     {
-      d.links.length > 0 && (
+      project.links.length > 0 && (
         <div class="links">
-          {d.links.map((l) => (
+          {project.links.map((l) => (
             <a class:list={['btn', { primary: l.primary }]} href={l.href} target="_blank" rel="noopener">
               {l.label}
             </a>
@@ -106,9 +144,9 @@ const { Content } = await render(project);
     <BuildNotes project={project} variant="desk" />
     <div class="desk-links">
       {
-        d.links.map((l, i) => (
-          <a class:list={{ try: i === 0 }} href={l.href} target="_blank" rel="noopener">
-            {i === 0 ? (isPlayStore(l.href) ? 'Get it on Google Play' : 'Try it live') : l.label}
+        project.links.map((l) => (
+          <a class:list={{ try: l.primary }} href={l.href} target="_blank" rel="noopener">
+            {l.primary && l.kind === 'web' ? 'Try it live' : l.label}
             <span aria-hidden="true"> ↗</span>
           </a>
         ))
@@ -119,6 +157,81 @@ const { Content } = await render(project);
 </Base>
 
 <style>
+  .design {
+    margin-top: 22px;
+    padding: 18px;
+    border: 1px solid var(--app-line);
+    border-radius: 18px;
+  }
+  .d-title {
+    margin: 8px 0 14px;
+    font: 700 19px/1.25 var(--app-display);
+  }
+  .swatches {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px 12px;
+  }
+  .swatches li {
+    display: grid;
+    grid-template-columns: 34px 1fr;
+    column-gap: 10px;
+    align-items: start;
+  }
+  .chip {
+    grid-row: span 3;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--app-fg) 18%, transparent);
+  }
+  .swatches b {
+    font-size: 13.5px;
+    font-weight: 600;
+  }
+  .swatches code {
+    font: 400 11.5px/1.4 var(--mono);
+    color: var(--app-muted);
+  }
+  .swatches small,
+  .type small {
+    font-size: 12px;
+    line-height: 1.35;
+    color: var(--app-muted);
+  }
+  .type {
+    margin: 18px 0 0;
+    padding: 16px 0 0;
+    border-top: 1px solid var(--app-line);
+    list-style: none;
+    display: grid;
+    gap: 12px;
+  }
+  .type li {
+    display: grid;
+    gap: 4px;
+  }
+  .sample {
+    line-height: 1.05;
+    font-feature-settings: 'tnum';
+  }
+  .rules {
+    margin: 16px 0 0;
+    padding: 14px 0 0 18px;
+    border-top: 1px solid var(--app-line);
+    display: grid;
+    gap: 6px;
+    font-size: 13.5px;
+    line-height: 1.45;
+  }
+  .rules li::marker {
+    color: var(--app-accent);
+    font-weight: 600;
+  }
+
   .hero {
     padding-top: 6px;
   }

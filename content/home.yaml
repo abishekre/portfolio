@@ -1,0 +1,36 @@
+# The home screen.
+
+# Every app, in the order it sits on the phone. `show: false` takes it off the site
+# (its folder stays in content/projects). Move a line up or down to reorder.
+apps:
+  - { app: tally, show: true }
+  - { app: bytwo, show: true }
+  - { app: kcal, show: true }
+  - { app: streets, show: true }
+  - { app: lumen, show: true }
+  - { app: kallan, show: true }
+  - { app: thodi, show: true }
+  - { app: deuce, show: true }
+  - { app: rally, show: true }
+  - { app: dazzle, show: true }
+
+# The widget at the top of the home screen. Delete these lines to hide it.
+nowBuilding:
+  app: deuce
+  note: Google sign-in, then ratings
+
+# The photo under the grid: an app, and which of its screens (1 = the first).
+# Delete these lines to hide it.
+photo:
+  app: streets
+  screen: 1
+  caption: MG Road, Bengaluru · 5:31 PM
+
+# Notifications on the lock screen, newest first. `app` (optional) is what a tap opens:
+# a folder in content/projects, or work, wallet, resume or notes.
+milestones:
+  - { app: streets, title: Silicon Streets, text: Live now. Drive Bengaluru in your browser. }
+  - { app: wallet, title: Trailhead, text: Agentblazer Innovator 2026 }
+  - { app: work, title: BITS Pilani, text: Started an M.Tech in AI and ML. }
+  - { app: tally, title: Tally, text: Live on Google Play. }
+  - { app: work, title: Salesforce, text: Associate Technical Consultant since March 2026. }

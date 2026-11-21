@@ -1,9 +1,8 @@
 ---
 name: Silicon Streets
-order: 4
 label: Streets
 tagline: Drive the real streets of Bengaluru in your browser.
-status: Coming to the web
+status: Live on the web
 theme:
   bg: '#0E1116'
   fg: '#E9EDF2'
@@ -19,6 +18,8 @@ stats:
   - { value: '4 PM', label: "rain, with flooding. It's Bengaluru." }
 what: Pick an auto, a scooter or a car. Take delivery jobs for Swiggly and Zoomato, ride the metro, flip flats with Namma Broker and pitch startups to VCs in cafés, with a parody radio station playing.
 hardTitle: A whole city in one browser tab
+web: https://siliconstreets.abishekre.in
+github: https://github.com/abishekre/silicon-streets
 screensAlt: Silicon Streets in the browser
 screensWide: true
 notes:

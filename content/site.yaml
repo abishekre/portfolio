@@ -1,38 +1,19 @@
-# Everything about you that shows up on the site.
-# Save the file and the page reloads (while `npm run dev` is running).
+# You: the things that show up all over the site.
+# The home screen (which apps, in what order) is in home.yaml; the résumé is in resume.yaml.
 
 name: Abishek R Edakkalathur
-bio: Independent developer from Kerala. I make offline-first apps for people in India.
+bio: Technical consultant at Salesforce by day. Evenings, I build offline-first apps for people in India.
 
 # Used in search results and link previews for the home page.
 description: Ten apps, from an SMS expense tracker to a 3D Bengaluru.
 
-# The status-bar clock and weather use this place.
-city: Kochi
-lat: 9.9312
-lon: 76.2673
+# Where you live: the clock and weather in the status bar use this.
+city: Bengaluru
+lat: 12.9716
+lon: 77.5946
+# Where you're from.
+hometown: Thrissur, Kerala
 
-# Dock and index-card links. TODO(Abishek): confirm the email is the one you want public.
 email: abishekre31@gmail.com
 github: https://github.com/abishekre
 linkedin: https://www.linkedin.com/in/abishek-r-edakkalathur-4822a3217/
-
-# The widget at the top of the home screen. `project` is a folder name in content/projects.
-# Delete these lines to hide the widget.
-nowBuilding:
-  project: deuce
-  note: Google sign-in, then ratings
-
-# The photo under the grid: a project, and which of its screens (1 = the first).
-# Delete these lines to hide the photo.
-photo:
-  project: streets
-  screen: 1
-  caption: MG Road, Bengaluru · 5:31 PM
-
-# The Résumé app. Put your PDF at public/resume.pdf and a "Download PDF" button appears.
-skills:
-  Languages: TypeScript, JavaScript, Rust, Kotlin, Python, SQL
-  Apps: React Native and Expo, React, Next.js, Astro, Jetpack Compose
-  Data: Supabase and Postgres with row-level security, SQLite, offline sync
-  Also: Three.js, ffmpeg, Playwright, Vitest, property-based testing, GitHub Actions, Vercel

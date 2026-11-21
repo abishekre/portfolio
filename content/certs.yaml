@@ -1,0 +1,40 @@
+# Certifications and badges. They show in the Wallet app and on the résumé.
+#
+# To add one: put its image in content/certs/ and add a row.
+#   image:  a file name in content/certs/ (optional; without one the pass shows the issuer)
+#   colour: the pass colour in the Wallet
+#   url:    where anyone can verify it (optional)
+#   show:   false hides it without deleting it
+
+certs:
+  - name: Agentblazer Innovator
+    issuer: Salesforce Trailhead
+    date: 2026
+    colour: '#0B5CAB'
+    show: true
+  - name: Agentblazer Champion
+    issuer: Salesforce Trailhead
+    date: 2026
+    colour: '#032D60'
+    show: true
+  # TODO(Abishek): confirm the exact Trailhead rank name.
+  - name: Double Star Ranger
+    issuer: Salesforce Trailhead
+    colour: '#5A1BA9'
+    show: true
+  - name: Foundations of User Experience (UX) Design
+    issuer: Google · Coursera
+    colour: '#1F1F1F'
+    show: true
+  - name: Python Data Structures
+    issuer: University of Michigan · Coursera
+    colour: '#00274C'
+    show: true
+  - name: Programming for Everybody (Getting Started with Python)
+    issuer: University of Michigan · Coursera
+    colour: '#2F4A6D'
+    show: true
+  - name: Data-Driven Decisions with Power BI
+    issuer: Coursera
+    colour: '#B8860B'
+    show: true

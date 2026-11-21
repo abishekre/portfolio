@@ -1,8 +1,8 @@
 ---
 name: Thodi
-order: 7
+kind: client
 tagline: Farmers sell straight to their neighbours. Malayalam first.
-status: Android, version 1.5
+status: Client work · in build
 theme:
   bg: '#F7F3E8'
   fg: '#3A2E22'
@@ -15,12 +15,10 @@ theme:
 stats:
   - { value: 'മ', label: Malayalam first, English second }
   - { value: 'Vetted', label: every seller approved before listing }
-  - { value: '1.5', label: current Android release }
+  - { value: 'Escrow', label: payments built, switched on when needed }
 what: "A marketplace for rural Kerala. Farmers list what they've grown, neighbours order before a deadline, and every listing can be shared on WhatsApp. It should feel like a market stall, not a delivery app."
 hardTitle: "Built for the people who'll use it"
-links:
-  - { label: Open thodi.vercel.app, href: 'https://thodi.vercel.app', primary: true }
-screensAlt: Thodi on Android
+screensAlt: Thodi, in build
 notes:
   stack: [Expo, NativeWind, Reanimated, i18next, Supabase]
   tests: Database tests on PGlite

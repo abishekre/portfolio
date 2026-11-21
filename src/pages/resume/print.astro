@@ -1,0 +1,283 @@
+---
+// One A4 page, rendered to public/resume.pdf by `npm run resume`. Not linked anywhere; noindex.
+import { getCollection } from 'astro:content';
+import { SITE } from '../../site';
+import { RESUME, CERTS } from '../../lib/resume';
+import { monthYear } from '../../lib/yaml';
+
+const all = await getCollection('projects');
+const picked = RESUME.projects.map((id) => {
+  const p = all.find((x) => x.id === id);
+  if (!p) throw new Error(`content/resume.yaml projects lists "${id}", but there's no content/projects/${id}/.`);
+  return p;
+});
+const span = (start: string, end?: string) => `${monthYear(start)} – ${end ? monthYear(end) : 'present'}`;
+const bare = (u: string) => u.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
+const linkFor = (d: (typeof all)[number]['data']) => d.playStore ? 'Google Play' : d.web ? bare(d.web) : d.github ? bare(d.github) : '';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex" />
+    <title>{SITE.name} · Résumé</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter+Tight:wght@400;500;600;700&display=block"
+    />
+  </head>
+  <body>
+    <main class="page">
+      <header>
+        <div>
+          <h1>{SITE.name}</h1>
+          <p class="headline">{RESUME.headline}</p>
+        </div>
+        <ul class="contact">
+          <li>{RESUME.location}</li>
+          <li><a href={`mailto:${SITE.email}`}>{SITE.email}</a></li>
+          <li><a href="https://www.abishekre.in">abishekre.in</a> · <a href={SITE.github}>{bare(SITE.github)}</a></li>
+          <li><a href={SITE.linkedin}>linkedin.com/in/abishek-r-edakkalathur</a></li>
+        </ul>
+      </header>
+
+      <p class="summary">{RESUME.summary}</p>
+
+      <section>
+        <h2>Experience</h2>
+        {
+          RESUME.experience.map((j) => (
+            <article class="job">
+              <div class="job-head">
+                <p>
+                  <b>{j.role}</b>, {j.company}
+                  {j.place && <span class="muted"> · {j.place}</span>}
+                </p>
+                <p class="muted">{span(j.start, j.end)}</p>
+              </div>
+              <ul>
+                {j.points.map((pt) => (
+                  <li>{pt}</li>
+                ))}
+              </ul>
+            </article>
+          ))
+        }
+      </section>
+
+      <section>
+        <h2>Side projects</h2>
+        <p class="note">Designed, built and shipped on my own. More at abishekre.in.</p>
+        <ul class="projects">
+          {
+            picked.map((p) => (
+              <li>
+                <b>{p.data.name}</b>
+                <span class="muted"> · {p.data.status}</span>
+                <br />
+                {p.data.tagline}
+                {linkFor(p.data) && <span class="link"> {linkFor(p.data)}</span>}
+              </li>
+            ))
+          }
+        </ul>
+      </section>
+
+      <div class="cols">
+        <section>
+          <h2>Skills</h2>
+          <dl>
+            {
+              Object.entries(RESUME.skills).map(([k, v]) => (
+                <div>
+                  <dt>{k}</dt>
+                  <dd>{v}</dd>
+                </div>
+              ))
+            }
+          </dl>
+        </section>
+        <div>
+          <section>
+            <h2>Education</h2>
+            <ul class="plain">
+              {
+                RESUME.education.map((e) => (
+                  <li>
+                    <b>{e.degree}</b>
+                    <br />
+                    {e.school} <span class="muted nowrap">· {span(e.start, e.end)}</span>
+                  </li>
+                ))
+              }
+            </ul>
+          </section>
+          <section>
+            <h2>Certifications and recognition</h2>
+            <ul class="plain certs">
+              {
+                CERTS.map((c) => (
+                  <li>
+                    <b>{c.name}</b> <span class="muted">· {c.issuer}{c.date && `, ${monthYear(c.date)}`}</span>
+                  </li>
+                ))
+              }
+            </ul>
+          </section>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>
+
+<style is:global>
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  html,
+  body {
+    margin: 0;
+    background: #fff;
+    color: #1d1a16;
+    font: 400 9.6pt/1.42 'Inter Tight', system-ui, sans-serif;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 15mm 16mm 13mm;
+  }
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+  p {
+    margin: 0;
+  }
+  ul,
+  dl {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .muted {
+    color: #6f675b;
+  }
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 10mm;
+    padding-bottom: 5mm;
+    border-bottom: 1.2pt solid #1d1a16;
+  }
+  h1 {
+    margin: 0;
+    font: 400 27pt/0.95 'Instrument Serif', Georgia, serif;
+    letter-spacing: -0.01em;
+  }
+  .headline {
+    margin-top: 2mm;
+    font-size: 11pt;
+    font-weight: 600;
+  }
+  .contact {
+    text-align: right;
+    font-size: 8.8pt;
+    line-height: 1.5;
+    color: #3d372f;
+  }
+  .summary {
+    margin-top: 4.5mm;
+    font-size: 10pt;
+    line-height: 1.5;
+  }
+  section {
+    margin-top: 5mm;
+  }
+  h2 {
+    margin: 0 0 2.2mm;
+    font-size: 7.6pt;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #8a5a1f;
+  }
+  .job + .job {
+    margin-top: 3.2mm;
+  }
+  .job-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 6mm;
+  }
+  .job ul,
+  .projects {
+    margin-top: 1.2mm;
+    display: grid;
+    gap: 0.9mm;
+  }
+  .job li {
+    position: relative;
+    padding-left: 3.4mm;
+  }
+  .job li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.62em;
+    width: 1.3mm;
+    height: 1.3mm;
+    border-radius: 50%;
+    background: #b59a73;
+  }
+  .note {
+    margin-top: -0.8mm;
+    font-size: 8.8pt;
+    color: #6f675b;
+  }
+  .projects {
+    grid-template-columns: 1fr 1fr;
+    gap: 2.4mm 7mm;
+    margin-top: 2mm;
+  }
+  .link {
+    color: #8a5a1f;
+    white-space: nowrap;
+  }
+  .cols {
+    display: grid;
+    grid-template-columns: 1.05fr 1fr;
+    gap: 9mm;
+  }
+  dl {
+    display: grid;
+    gap: 1.6mm;
+  }
+  dt {
+    font-weight: 600;
+  }
+  dd {
+    margin: 0;
+  }
+  .plain {
+    display: grid;
+    gap: 1.6mm;
+  }
+  .certs {
+    gap: 0.8mm;
+    font-size: 9pt;
+    line-height: 1.35;
+  }
+  .nowrap {
+    white-space: nowrap;
+  }
+</style>

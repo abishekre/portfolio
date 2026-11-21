@@ -7,12 +7,13 @@ import DeskThings from '../components/DeskThings.astro';
 import { Image } from 'astro:assets';
 import { allProjects, counts } from '../lib/projects';
 import { SITE } from '../site';
+import { HOME } from '../lib/home';
 
 const projects = await allProjects();
 const c = counts(projects);
-const building = projects.find((p) => p.id === SITE.nowBuilding?.project);
-const photoOf = projects.find((p) => p.id === SITE.photo?.project);
-const photo = photoOf?.screens[(SITE.photo?.screen ?? 1) - 1];
+const building = projects.find((p) => p.id === HOME.nowBuilding?.app);
+const photoOf = projects.find((p) => p.id === HOME.photo?.app);
+const photo = photoOf?.screens[(HOME.photo?.screen ?? 1) - 1];
 ---
 
 <Base title={SITE.name} description={`${SITE.bio} ${SITE.description}`.trim()}>
@@ -38,7 +39,7 @@ const photo = photoOf?.screens[(SITE.photo?.screen ?? 1) - 1];
             <span class="w-right">
               <span class="w-label">Now building</span>
               <span class="w-what">{building.data.label ?? building.data.name}</span>
-              <span class="w-sub">{SITE.nowBuilding?.note}</span>
+              <span class="w-sub">{HOME.nowBuilding?.note}</span>
             </span>
           )
         }
@@ -70,7 +71,7 @@ const photo = photoOf?.screens[(SITE.photo?.screen ?? 1) - 1];
           <Image src={photo} alt="" width={700} />
           <span class="photo-cap">
             <span class="photo-app">Photos</span>
-            <span>{SITE.photo?.caption}</span>
+            <span>{HOME.photo?.caption}</span>
           </span>
         </a>
       )
@@ -90,9 +91,10 @@ const photo = photoOf?.screens[(SITE.photo?.screen ?? 1) - 1];
     <div class="summary">
       <p class="eyebrow">On this phone</p>
       <p class="big">{c.total} apps</p>
-      <p class="line">{c.play} on Google Play</p>
-      <p class="line">{c.web} you can open on the web</p>
-      <p class="line">1 for a client</p>
+      {c.play > 0 && <p class="line">{c.play} on Google Play</p>}
+      {c.web > 0 && <p class="line">{c.web} you can open on the web</p>}
+      {c.openSource > 0 && <p class="line">{c.openSource} open source</p>}
+      {c.client > 0 && <p class="line">{c.client} made for clients</p>}
       <p class="hint">Click an app to open it.<br />Arrow keys and Enter work too.</p>
     </div>
     <DeskThings thing="pen" />

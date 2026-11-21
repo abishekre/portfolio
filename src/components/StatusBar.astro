@@ -23,7 +23,7 @@ import { SITE } from '../site';
     const showTemp = (c) => document.querySelectorAll('[data-temp]').forEach((el) => (el.textContent = `${c}°`));
     let cached = null;
     try {
-      cached = sessionStorage.getItem('kochi-temp');
+      cached = sessionStorage.getItem('city-temp');
     } catch {}
     if (cached) showTemp(cached);
     else
@@ -33,13 +33,13 @@ import { SITE } from '../site';
           const c = Math.round(d.current.temperature_2m);
           showTemp(c);
           try {
-            sessionStorage.setItem('kochi-temp', String(c));
+            sessionStorage.setItem('city-temp', String(c));
           } catch {}
         })
         .catch(() => {});
     document.addEventListener('astro:page-load', () => {
       try {
-        const c = sessionStorage.getItem('kochi-temp');
+        const c = sessionStorage.getItem('city-temp');
         if (c) showTemp(c);
       } catch {}
     });

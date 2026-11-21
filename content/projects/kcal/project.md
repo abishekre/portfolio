@@ -1,8 +1,7 @@
 ---
 name: Kcal
-order: 3
 tagline: A calorie tracker that knows puttu, appam and Bangalore biryani.
-status: Live on the web and Android
+status: Live on the web
 theme:
   bg: '#F7F7F4'
   fg: '#141414'
@@ -18,13 +17,12 @@ stats:
   - { value: '2', label: themes, contrast checked by tests }
 what: Most calorie apps think dinner is a burger. Kcal starts from what people in Kerala and Bangalore actually eat, and tracks macros, water, weight and workouts without needing a connection.
 hardTitle: Numbers you can check
-links:
-  - { label: Open kcal.abishekre.in, href: 'https://kcal.abishekre.in', primary: true }
+web: https://kcal.abishekre.in
 screensAlt: Kcal's today screen, plan and welcome
 notes:
   stack: [Expo, React Native, TypeScript, SQLite, Supabase, Zustand]
   tests: Vitest, including sync and colour-contrast tests
-  platforms: Android and web (installable)
+  platforms: Web (installable)
   when: Rebuilt 2026
 ---
 

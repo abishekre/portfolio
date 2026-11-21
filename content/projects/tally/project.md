@@ -1,6 +1,5 @@
 ---
 name: Tally
-order: 1
 tagline: An expense tracker that reads your bank SMS. No account, no server, no internet.
 status: On Google Play
 theme:
@@ -18,8 +17,7 @@ stats:
   - { value: '96%', label: of transactions caught }
 what: Tally opens straight onto a keypad, so logging a payment takes two taps. It reads the bank and UPI alerts already on your phone and books them itself, and it doesn't even have permission to use the internet.
 hardTitle: Teaching a phone to read 17 banks
-links:
-  - { label: Get it on Google Play, href: 'https://play.google.com/store/apps/details?id=app.tally.client', primary: true }
+playStore: https://play.google.com/store/apps/details?id=app.tally.client
 screensAlt: Tally's Play Store screenshots
 notes:
   stack: [Expo, React Native, TypeScript, Kotlin native module, SQLite, '@noble crypto']

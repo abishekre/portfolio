@@ -1,6 +1,5 @@
 ---
 name: Dazzle Designs
-order: 10
 label: Dazzle
 kind: client
 tagline: A website for a five-person event-decor studio in Houston.

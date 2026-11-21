@@ -14,10 +14,6 @@ const projects = defineCollection({
     name: z.string(),
     // Short name under the home-screen icon.
     label: z.string().optional(),
-    // Position on the home screen; lower comes first.
-    order: z.number().default(99),
-    // true keeps the folder but takes the project off the site.
-    hidden: z.boolean().default(false),
     kind: z.enum(['app', 'client']).default('app'),
     // One line under the name. Keep it under ~80 characters.
     tagline: z.string(),
@@ -37,14 +33,24 @@ const projects = defineCollection({
     stats: z.array(z.object({ value: z.string(), label: z.string() })).length(3, 'stats needs exactly 3 numbers'),
     what: z.string(),
     hardTitle: z.string(),
-    links: z
-      .array(z.object({ label: z.string(), href: z.url(), primary: z.boolean().default(false) }))
-      // An empty `links:` (or one with only comments under it) means no links.
-      .nullish()
-      .transform((v) => v ?? []),
+    // Links. Buttons are made from these: Google Play first, then the web, then GitHub (public repos only).
+    playStore: z.url().optional(),
+    web: z.url().optional(),
+    github: z.url().optional(),
     screensAlt: z.string().optional(),
     // Landscape images (TV screens, banners) instead of phone screens.
     screensWide: z.boolean().default(false),
+    // Shown instead of screenshots when there are none yet (see lumen).
+    design: z
+      .object({
+        title: z.string().optional(),
+        swatches: z.array(z.object({ name: z.string(), value: z.string(), note: z.string().optional() })).default([]),
+        type: z
+          .array(z.object({ name: z.string(), family: z.string(), weight: z.number().default(400), sample: z.string(), size: z.number().default(20) }))
+          .default([]),
+        rules: z.array(z.string()).default([]),
+      })
+      .optional(),
     notes: z.object({
       stack: z.array(z.string()),
       tests: z.string().optional(),

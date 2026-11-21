@@ -1,4 +1,5 @@
 ---
+// The Résumé app. Everything comes from content/resume.yaml and content/certs.yaml.
 import fs from 'node:fs';
 import Base from '../layouts/Base.astro';
 import AppShell from '../components/AppShell.astro';
@@ -6,32 +7,54 @@ import IndexCard from '../components/IndexCard.astro';
 import { allProjects } from '../lib/projects';
 import { PAPER } from '../lib/paper';
 import { SITE } from '../site';
+import { RESUME, CERTS } from '../lib/resume';
+import { monthYear } from '../lib/yaml';
 
 const projects = await allProjects();
-const hasPdf = fs.existsSync(new URL('../../public/resume.pdf', import.meta.url));
-
-const skills = Object.entries(SITE.skills);
+const hasPdf = fs.existsSync('public/resume.pdf');
+const span = (start: string, end?: string) => `${monthYear(start)} – ${end ? monthYear(end) : 'now'}`;
 ---
 
-<Base title={`Résumé · ${SITE.name}`} description={SITE.bio} statusInk={PAPER.fg} tint="#F6F1E6">
+<Base title={`Résumé · ${SITE.name}`} description={`${RESUME.headline}. ${SITE.bio}`} statusInk={PAPER.fg} tint="#F6F1E6">
   <Fragment slot="left"><IndexCard compact /></Fragment>
 
   <AppShell slug="resume" theme={PAPER} label="Résumé">
     <h1>{SITE.name}</h1>
-    <p class="lede">{SITE.bio}</p>
+    <p class="headline">{RESUME.headline}</p>
+    <p class="where">{RESUME.location}</p>
+    <p class="lede">{RESUME.summary}</p>
 
     {
       hasPdf && (
-        <a class="pdf" href={SITE.resumePdf} download>
+        <a class="pdf" href={SITE.resumePdf} download="Abishek-R-Edakkalathur-resume.pdf">
           Download PDF
         </a>
       )
     }
 
-    <h2>What I work with</h2>
+    <h2>Experience</h2>
+    <ol class="jobs">
+      {
+        RESUME.experience.map((j) => (
+          <li>
+            <p class="role">{j.role}</p>
+            <p class="org">
+              {j.company} · <span>{span(j.start, j.end)}</span>
+            </p>
+            <ul>
+              {j.points.map((pt) => (
+                <li>{pt}</li>
+              ))}
+            </ul>
+          </li>
+        ))
+      }
+    </ol>
+
+    <h2>Skills</h2>
     <dl>
       {
-        skills.map(([k, v]) => (
+        Object.entries(RESUME.skills).map(([k, v]) => (
           <div>
             <dt>{k}</dt>
             <dd>{v}</dd>
@@ -39,6 +62,40 @@ const skills = Object.entries(SITE.skills);
         ))
       }
     </dl>
+
+    {
+      CERTS.length > 0 && (
+        <>
+          <h2>Certifications and recognition</h2>
+          <ul class="certs">
+            {CERTS.map((c) => (
+              <li>
+                <b>{c.name}</b>
+                <span>
+                  {c.issuer}
+                  {c.date && ` · ${monthYear(c.date)}`}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <a class="more" href="/wallet">See them in the Wallet →</a>
+        </>
+      )
+    }
+
+    <h2>Education</h2>
+    <ul class="edu">
+      {
+        RESUME.education.map((e) => (
+          <li>
+            <b>{e.degree}</b>
+            <span>
+              {e.school} · {span(e.start, e.end)}
+            </span>
+          </li>
+        ))
+      }
+    </ul>
 
     <h2>Things I've built</h2>
     <ul class="work">
@@ -66,11 +123,20 @@ const skills = Object.entries(SITE.skills);
     margin: 8px 0 0;
     font: 400 40px/0.98 var(--serif);
   }
-  .lede {
+  .headline {
     margin: 12px 0 0;
     font-size: 16px;
-    line-height: 1.5;
+    font-weight: 600;
+  }
+  .where {
+    margin: 2px 0 0;
+    font-size: 14px;
     color: var(--app-muted);
+  }
+  .lede {
+    margin: 14px 0 0;
+    font-size: 15.5px;
+    line-height: 1.55;
   }
   .pdf {
     display: inline-flex;
@@ -92,6 +158,50 @@ const skills = Object.entries(SITE.skills);
     text-transform: uppercase;
     color: var(--app-muted);
   }
+  ol,
+  ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .jobs {
+    display: grid;
+    gap: 20px;
+  }
+  .role {
+    margin: 0;
+    font: 400 22px/1.1 var(--serif);
+  }
+  .org {
+    margin: 3px 0 0;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .org span {
+    font-weight: 400;
+    color: var(--app-muted);
+  }
+  .jobs ul {
+    margin-top: 8px;
+    display: grid;
+    gap: 6px;
+  }
+  .jobs ul li {
+    position: relative;
+    padding-left: 14px;
+    font-size: 14.5px;
+    line-height: 1.5;
+  }
+  .jobs ul li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.62em;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--app-muted);
+  }
   dl {
     margin: 0;
     display: grid;
@@ -106,10 +216,34 @@ const skills = Object.entries(SITE.skills);
     font-size: 14.5px;
     line-height: 1.5;
   }
+  .certs,
+  .edu {
+    display: grid;
+    gap: 12px;
+  }
+  .certs b,
+  .edu b {
+    display: block;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.35;
+  }
+  .certs span,
+  .edu span {
+    display: block;
+    margin-top: 2px;
+    font-size: 13.5px;
+    color: var(--app-muted);
+  }
+  .more {
+    display: inline-block;
+    margin-top: 14px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--app-fg);
+    text-underline-offset: 3px;
+  }
   .work {
-    margin: 0;
-    padding: 0;
-    list-style: none;
     display: grid;
     gap: 12px;
   }

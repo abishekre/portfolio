@@ -1,8 +1,7 @@
 ---
 name: ByTwo
-order: 2
 tagline: Split bills with friends and settle up over UPI. Encrypted before it leaves your phone.
-status: Live on the web
+status: In development · coming to Android, iOS and web
 theme:
   bg: '#FFFDF5'
   fg: '#111111'
@@ -19,13 +18,11 @@ stats:
   - { value: '64', label: commits in the rebuild }
 what: An open-source Splitwise alternative made for India. Add a bill, see who owes whom, and settle up with a UPI hand-off. Friends join from a WhatsApp link without installing anything.
 hardTitle: A ledger that can't disagree with itself
-links:
-  - { label: Open bytwo.vercel.app, href: 'https://bytwo.vercel.app', primary: true }
 screensAlt: ByTwo's welcome screens
 notes:
   stack: [Expo, React Native, TypeScript, Supabase, '@noble crypto', Playwright]
   tests: Vitest, Playwright, a multi-device sync simulator
-  platforms: Android and web (installable)
+  platforms: Android, iOS and web (in development)
   when: Rebuilt October 2026
 ---
 

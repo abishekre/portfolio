@@ -1,6 +1,6 @@
 // Makes a new project folder with every field filled in, ready to edit.
 // Usage: npm run new -- my-app "My App"
-import { mkdir, writeFile, access } from 'node:fs/promises';
+import { mkdir, writeFile, access, readFile } from 'node:fs/promises';
 
 const [slug, ...rest] = process.argv.slice(2);
 const name = rest.join(' ') || slug;
@@ -18,8 +18,6 @@ if (await access(dir).then(() => true, () => false)) {
 const md = `---
 name: ${name}
 # label: Short     # shorter name under the icon, if the name is long
-order: 99          # position on the home screen; lower comes first
-# hidden: true     # keep the folder but take it off the site
 # kind: client     # for work made for someone else
 tagline: One line about what it is, under 80 characters.
 status: In progress
@@ -38,8 +36,10 @@ stats:             # exactly three
   - { value: '3', label: third number }
 what: Two or three sentences on what it does and who it's for.
 hardTitle: The hardest problem, as a headline
-links:
-  # - { label: Try it live, href: 'https://example.com', primary: true }
+# Links: the buttons are made from these. Leave out any it doesn't have.
+# playStore: https://play.google.com/store/apps/details?id=…
+# web: https://my-app.example.com
+# github: https://github.com/abishekre/my-app   # public repos only
 # screensWide: true   # for landscape screens (TV, banners)
 notes:
   stack: [TypeScript]
@@ -57,8 +57,11 @@ const icon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><rec
 await mkdir(`${dir}/screens`, { recursive: true });
 await writeFile(`${dir}/project.md`, md);
 await writeFile(`${dir}/icon.svg`, icon);
+// Put it on the home screen, at the end. Reorder or switch it off in content/home.yaml.
+const home = await readFile('content/home.yaml', 'utf8');
+await writeFile('content/home.yaml', home.replace(/(apps:\n(?: {2}- .*\n)*)/, `$1  - { app: ${slug}, show: true }\n`));
 console.log(`Made ${dir}/
   project.md   fill this in
   icon.svg     a placeholder; replace with the real icon (icon.png works too)
   screens/     drop screenshots here: 1.png, 2.png, …
-It's live at /${slug} once you run npm run dev.`);
+It's on the home screen (content/home.yaml) and at /${slug} once you run npm run dev.`);
