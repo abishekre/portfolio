@@ -777,7 +777,9 @@ const timeline = [
     .page {
       overflow: visible;
     }
+    /* Short pages on tall phones: the dots and dock still sit at the bottom, not mid-screen. */
     .pager {
+      margin-top: auto;
       padding-top: 14px;
     }
     .done {
@@ -793,6 +795,9 @@ const timeline = [
     .photo {
       display: none;
     }
+  }
+  /* Phones: the name and a line about you head both pages. */
+  @media (max-width: 767px) {
     .who {
       display: block;
       margin: 0 4px 18px;
