@@ -54,7 +54,7 @@ const span = (start: string, end?: string) => `${monthYear(start)} – ${end ? m
     <h2>Skills</h2>
     <dl>
       {
-        Object.entries(RESUME.skills).map(([k, v]) => (
+        RESUME.skills.map(({ group: k, items: v }) => (
           <div>
             <dt>{k}</dt>
             <dd>{v}</dd>

@@ -43,10 +43,10 @@ clients:
   - { industry: Banking, region: India, product: MDM }
 
 skills:
-  Informatica: Product 360, ActiveVOS, Data Quality (IDQ), MDM
-  Languages: TypeScript, JavaScript, Kotlin, Rust, Python, SQL
-  Apps: React Native and Expo, React, Astro, Jetpack Compose, Supabase and Postgres, SQLite
-  Practice: Offline-first sync, row-level security, Playwright, Vitest, GitHub Actions, Vercel
+  - { group: Informatica, items: 'Product 360, ActiveVOS, Data Quality (IDQ), MDM' }
+  - { group: Languages, items: 'TypeScript, JavaScript, Kotlin, Rust, Python, SQL' }
+  - { group: Apps, items: 'React Native and Expo, React, Astro, Jetpack Compose, Supabase and Postgres, SQLite' }
+  - { group: Practice, items: 'Offline-first sync, row-level security, Playwright, Vitest, GitHub Actions, Vercel' }
 
 education:
   - school: BITS Pilani (Work Integrated Learning Programmes)

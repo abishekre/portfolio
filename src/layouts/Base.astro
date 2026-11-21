@@ -1,6 +1,8 @@
 ---
 import { ClientRouter } from 'astro:transitions';
 import StatusBar from '../components/StatusBar.astro';
+import Toast from '../components/Toast.astro';
+import Coffee from '../components/Coffee.astro';
 import '../styles/global.css';
 
 interface Props {
@@ -70,22 +72,47 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
           if (vt) document.documentElement.dataset.vt = vt;
           else delete document.documentElement.dataset.vt;
         }
-        function nameIcon(path) {
-          var icon = document.querySelector('[data-app][href="' + path + '"] .ic');
+        // The exact icon that was tapped (the same app can sit on page two and in the dock),
+        // and so which home page to come back to when it closes.
+        var tapped = { path: '', index: -1 };
+        function apps() {
+          return Array.prototype.slice.call(document.querySelectorAll('[data-app]'));
+        }
+        function iconFor(path, preferIndex) {
+          var list = apps();
+          var el = list[preferIndex];
+          if (!el || el.getAttribute('href') !== path) el = document.querySelector('[data-app][href="' + path + '"]');
+          return el;
+        }
+        function nameIcon(el) {
+          var icon = el && el.querySelector('.ic');
           if (icon) icon.style.viewTransitionName = 'app';
           return !!icon;
         }
         document.addEventListener('astro:before-preparation', function (e) {
           from = location.pathname;
           var to = e.to.pathname;
-          vt = from === '/' && nameIcon(to) ? 'open' : to === '/' && from !== '/' ? 'close' : '';
+          if (from === '/') {
+            var src = e.sourceElement && e.sourceElement.closest && e.sourceElement.closest('[data-app]');
+            tapped = { path: to, index: src ? apps().indexOf(src) : -1 };
+            vt = nameIcon(src || iconFor(to, -1)) ? 'open' : '';
+          } else {
+            vt = to === '/' ? 'close' : '';
+          }
           setVt();
         });
         apply();
         addEventListener('resize', apply);
         document.addEventListener('astro:after-swap', function () {
           apply();
-          if (vt === 'close' && !nameIcon(from)) vt = '';
+          if (vt === 'close') {
+            var el = iconFor(from, tapped.path === from ? tapped.index : -1);
+            // Bring that icon's home page back into view before the closing animation is drawn.
+            var page = el && el.closest('.page');
+            var pages = page && page.parentElement;
+            if (pages) pages.scrollLeft = page.offsetLeft - pages.offsetLeft;
+            if (!nameIcon(el)) vt = '';
+          }
           setVt();
         });
         // Clear the name once the animation is over, so the next tap starts clean.
@@ -104,11 +131,13 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <div class="stage" style={tint ? `--tint:${tint}` : undefined}>
       <aside class="desk desk-l" aria-label="About">
         <slot name="left" />
+        <Coffee />
       </aside>
       <div class="phone">
         <div class="screen" style={statusInk ? `--sb:${statusInk}` : undefined}>
           <StatusBar />
           <slot />
+          <Toast />
         </div>
       </div>
       <aside class="desk desk-r" aria-label="Details">
@@ -117,6 +146,14 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     </div>
     <!-- Real time in every clock before the first paint, not a 9:41 placeholder. -->
     <script is:inline>window.__tick && window.__tick();</script>
+    {
+      import.meta.env.PROD && (
+        <script is:inline>
+          // Works offline after one visit (public/sw.js).
+          if ('serviceWorker' in navigator) addEventListener('load', function () { navigator.serviceWorker.register('/sw.js').catch(function () {}); });
+        </script>
+      )
+    }
   </body>
 </html>
 
@@ -130,6 +167,8 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     padding: 28px clamp(28px, 4vw, 72px);
     background: var(--desk);
     transition: background-color 0.5s ease;
+    /* Things on the desk may run off its edge (the coffee does). */
+    overflow: clip;
   }
   .stage[style*='--tint'] {
     background: color-mix(in oklab, var(--desk) 86%, var(--tint));
@@ -178,6 +217,16 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     overflow: hidden;
     background: var(--wall);
     color: var(--wall-ink);
+  }
+
+  /* Desktop: exactly one screen tall, so the phone stays centred; desk things may run off the edges. */
+  @media (min-width: 1100px) {
+    .stage {
+      height: 100dvh;
+    }
+    .desk {
+      min-height: 0;
+    }
   }
 
   /* Tablet: phone first, notes below it. */

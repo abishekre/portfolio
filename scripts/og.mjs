@@ -18,6 +18,11 @@ for (const slug of slugs) {
 
 // The home card is the desk itself, in daylight.
 const desk = await browser.newPage({ viewport: { width: 1200, height: 630 }, deviceScaleFactor: 1, colorScheme: 'light' });
+// As a returning visitor: past the lock screen.
+await desk.addInitScript(() => {
+  localStorage.setItem('pf-unlocked', '1');
+  localStorage.setItem('pf-peeked', '1');
+});
 await desk.goto(base, { waitUntil: 'networkidle' });
 await desk.evaluate(() => {
   document.documentElement.dataset.time = 'day';

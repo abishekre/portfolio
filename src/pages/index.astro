@@ -3,81 +3,162 @@ import Base from '../layouts/Base.astro';
 import AppIcon from '../components/AppIcon.astro';
 import DockIcon from '../components/DockIcon.astro';
 import IndexCard from '../components/IndexCard.astro';
-import DeskThings from '../components/DeskThings.astro';
+import DeskObjects from '../components/DeskObjects.astro';
+import LockScreen from '../components/LockScreen.astro';
 import { Image } from 'astro:assets';
 import { allProjects, counts } from '../lib/projects';
 import { SITE } from '../site';
 import { HOME } from '../lib/home';
+import { RESUME, CERTS } from '../lib/resume';
+import { monthYear } from '../lib/yaml';
 
 const projects = await allProjects();
 const c = counts(projects);
 const building = projects.find((p) => p.id === HOME.nowBuilding?.app);
 const photoOf = projects.find((p) => p.id === HOME.photo?.app);
 const photo = photoOf?.screens[(HOME.photo?.screen ?? 1) - 1];
+
+// Work page: the current job, and a small timeline of jobs and degrees.
+const job = RESUME.experience[0];
+const timeline = [
+  ...RESUME.experience.map((j) => ({ when: j.start, label: j.company })),
+  ...RESUME.education.map((e) => ({ when: String(e.start), label: e.degree.split(',')[0] })),
+].sort((a, b) => a.when.localeCompare(b.when));
 ---
 
 <Base title={SITE.name} description={`${SITE.bio} ${SITE.description}`.trim()}>
   <Fragment slot="left">
     <IndexCard />
-    <DeskThings thing="chai" />
+    <DeskObjects kind="badge" title={`Day job · ${job.company}`} role={job.role} line={`Since ${monthYear(job.start)} · ${SITE.city}`} href="/work" />
   </Fragment>
 
   <main class="home" data-home>
     <button class="done" type="button" data-done>Done</button>
-    <header class="top">
-      <div class="who">
-        <p class="who-name">{SITE.name}</p>
-        <p class="who-bio">{SITE.bio}</p>
-      </div>
-      <a class="widget" href={building ? `/${building.id}` : '/notes'} aria-label={building ? `Now building: ${building.data.name}` : 'Notes'}>
-        <span class="w-left">
-          <span class="w-time" data-clock>9:41</span>
-          <span class="w-place">{SITE.city} <span data-temp></span></span>
-        </span>
-        {
-          building && (
-            <span class="w-right">
-              <span class="w-label">Now building</span>
-              <span class="w-what">{building.data.label ?? building.data.name}</span>
-              <span class="w-sub">{HOME.nowBuilding?.note}</span>
-            </span>
-          )
-        }
-      </a>
-    </header>
 
-    <ul class="grid" data-grid>
-      {
-        projects.map((p) => (
+    <div class="pages" data-pages>
+      <section class="page" aria-label="Apps">
+        <header class="top">
+          <div class="who">
+            <p class="who-name">{SITE.name}</p>
+            <p class="who-bio">{SITE.bio}</p>
+          </div>
+          <div class="widget">
+            <button class="w-left" type="button" data-dev-tap aria-label={`${SITE.city} time`}>
+              <span class="w-time" data-clock></span>
+              <span class="w-place">{SITE.city} <span data-temp></span></span>
+            </button>
+            {
+              building && (
+                <a class="w-right" href={`/${building.id}`} aria-label={`Now building: ${building.data.name}`}>
+                  <span class="w-label">Now building</span>
+                  <span class="w-what">{building.data.label ?? building.data.name}</span>
+                  <span class="w-sub">{HOME.nowBuilding?.note}</span>
+                </a>
+              )
+            }
+          </div>
+        </header>
+
+        <ul class="grid" data-grid>
+          {
+            projects.map((p) => (
+              <li>
+                <a class="app" href={`/${p.id}`} data-app>
+                  <AppIcon icon={p.icon} />
+                  <span class="lbl">{p.data.label ?? p.data.name}</span>
+                </a>
+              </li>
+            ))
+          }
           <li>
-            <a class="app" href={`/${p.id}`} data-app>
-              <AppIcon icon={p.icon} />
-              <span class="lbl">{p.data.label ?? p.data.name}</span>
+            <a class="app" href="/notes" data-app>
+              <DockIcon kind="notes" />
+              <span class="lbl">Notes</span>
             </a>
           </li>
-        ))
-      }
-      <li>
-        <a class="app" href="/notes" data-app>
-          <DockIcon kind="notes" />
-          <span class="lbl">Notes</span>
-        </a>
-      </li>
-    </ul>
+        </ul>
 
-    {
-      photoOf && photo && (
-        <a class="photo" href={`/${photoOf.id}`} aria-label={`Photo: ${photoOf.data.name}. Open ${photoOf.data.name}`}>
-          <Image src={photo} alt="" width={700} />
-          <span class="photo-cap">
-            <span class="photo-app">Photos</span>
-            <span>{HOME.photo?.caption}</span>
-          </span>
-        </a>
-      )
-    }
+        {
+          photoOf && photo && (
+            <a class="photo" href={`/${photoOf.id}`} aria-label={`Photo: ${photoOf.data.name}. Open ${photoOf.data.name}`}>
+              <Image src={photo} alt="" width={700} />
+              <span class="photo-cap">
+                <span class="photo-app">Photos</span>
+                <span>{HOME.photo?.caption}</span>
+              </span>
+            </a>
+          )
+        }
 
-    <a class="all" href="/list">All projects as a list</a>
+      </section>
+
+      <section class="page work" aria-label="Work">
+        <div class="who who-work">
+          <p class="who-name">Day job</p>
+          <p class="who-bio">Master data for enterprise customers, at {job.company}.</p>
+        </div>
+        <a class="job" href="/work">
+          <span class="j-label">{job.company} · since {monthYear(job.start)}</span>
+          <span class="j-role">{job.role}</span>
+          <span class="j-tools">{job.tools.join(' · ')}</span>
+        </a>
+
+        <a class="tl" href="/resume" aria-label="Timeline. Open the résumé">
+          <span class="tl-label">So far</span>
+          <ol>
+            {
+              timeline.map((t) => (
+                <li>
+                  <span class="tl-year">{t.when.slice(0, 4)}</span>
+                  <span class="tl-what">{t.label}</span>
+                </li>
+              ))
+            }
+          </ol>
+        </a>
+
+        <ul class="grid work-grid" data-grid-work>
+          <li>
+            <a class="app" href="/work" data-app>
+              <DockIcon kind="work" />
+              <span class="lbl">Work</span>
+            </a>
+          </li>
+          <li>
+            <a class="app" href="/wallet" data-app>
+              <DockIcon kind="wallet" />
+              <span class="lbl">Wallet</span>
+            </a>
+          </li>
+          <li>
+            <a class="app" href="/resume" data-app>
+              <DockIcon kind="resume" />
+              <span class="lbl">Résumé</span>
+            </a>
+          </li>
+          <li data-dev-app hidden>
+            <a class="app" href="/developer" data-app>
+              <DockIcon kind="dev" />
+              <span class="lbl">Developer</span>
+            </a>
+          </li>
+        </ul>
+        {CERTS.length > 0 && <p class="work-note">{CERTS.length} certifications and badges in the Wallet</p>}
+      </section>
+    </div>
+
+    <div class="pager">
+      <span class="pager-side"><a class="all" href="/list">List view</a></span>
+      <div class="dots" role="group" aria-label="Home screen pages">
+        <button type="button" class="dot on" data-dot="0" aria-label="Apps page" aria-current="true"></button>
+        <button type="button" class="dot" data-dot="1" aria-label="Work page"></button>
+      </div>
+      <span class="pager-side">
+        <button type="button" class="lockbtn" data-lock-btn aria-label="Lock the phone">
+          <svg viewBox="0 0 16 20" aria-hidden="true"><rect x="2" y="8.5" width="12" height="10" rx="2.5"></rect><path d="M4.8 8.5V6a3.2 3.2 0 0 1 6.4 0v2.5"></path></svg>
+        </button>
+      </span>
+    </div>
 
     <nav class="dock" aria-label="Contact">
       <a href="/resume" aria-label="Résumé" data-app><DockIcon kind="resume" /></a>
@@ -87,6 +168,8 @@ const photo = photoOf?.screens[(HOME.photo?.screen ?? 1) - 1];
     </nav>
   </main>
 
+  <LockScreen />
+
   <Fragment slot="right">
     <div class="summary">
       <p class="eyebrow">On this phone</p>
@@ -95,51 +178,163 @@ const photo = photoOf?.screens[(HOME.photo?.screen ?? 1) - 1];
       {c.web > 0 && <p class="line">{c.web} you can open on the web</p>}
       {c.openSource > 0 && <p class="line">{c.openSource} open source</p>}
       {c.client > 0 && <p class="line">{c.client} made for clients</p>}
-      <p class="hint">Click an app to open it.<br />Arrow keys and Enter work too.</p>
+      <p class="hint">Click an app to open it. Swipe, or press → at the end of a row, for page two.</p>
     </div>
-    <DeskThings thing="pen" />
+    <div class="desk-stack">
+      {
+        building?.screens[0] && (
+          <DeskObjects kind="polaroid" image={building.screens[0]} caption={`${building.data.name}, on the bench`} href={`/${building.id}`} />
+        )
+      }
+      <DeskObjects kind="sticky" title="Say hello" text={SITE.email} href={`mailto:${SITE.email}`} />
+    </div>
   </Fragment>
 </Base>
 
 <script>
-  // Arrow-key navigation across the 4-column grid.
   function init() {
-    const grid = document.querySelector<HTMLElement>('[data-grid]');
-    if (!grid) return;
+    const home = document.querySelector<HTMLElement>('[data-home]');
+    if (!home) return;
+    const pages = home.querySelector<HTMLElement>('[data-pages]')!;
+    const grid = home.querySelector<HTMLElement>('[data-grid]')!;
+    const workGrid = home.querySelector<HTMLElement>('[data-grid-work]')!;
+    const dots = [...home.querySelectorAll<HTMLButtonElement>('[data-dot]')];
+
+    // Pages: native horizontal scrolling with snap; the dots follow and can be tapped.
+    const current = () => Math.round(pages.scrollLeft / pages.clientWidth);
+    const goPage = (i: number) => pages.scrollTo({ left: i * pages.clientWidth, behavior: 'smooth' });
+    const mark = () => {
+      const i = current();
+      dots.forEach((d, j) => {
+        d.classList.toggle('on', i === j);
+        if (i === j) d.setAttribute('aria-current', 'true');
+        else d.removeAttribute('aria-current');
+      });
+    };
+    pages.addEventListener('scroll', mark, { passive: true });
+    mark(); // the page may already have been restored (coming back from an app on page two)
+    dots.forEach((d, i) => (d.onclick = () => goPage(i)));
+
+    // Arrow keys: around the grid, and across to the other page at the edges.
     const apps = [...grid.querySelectorAll<HTMLAnchorElement>('[data-app]')];
+    const work = () => [...workGrid.querySelectorAll<HTMLAnchorElement>('li:not([hidden]) [data-app]')];
     grid.onkeydown = (e) => {
       const i = apps.indexOf(document.activeElement as HTMLAnchorElement);
       if (i < 0) return;
-      const step = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: 4, ArrowUp: -4 }[e.key];
+      if (e.key === 'ArrowRight' && (i % 4 === 3 || i === apps.length - 1)) {
+        e.preventDefault();
+        goPage(1);
+        work()[0]?.focus({ preventScroll: true });
+        return;
+      }
+      const step = ({ ArrowRight: 1, ArrowLeft: -1, ArrowDown: 4, ArrowUp: -4 } as Record<string, number>)[e.key];
       if (!step) return;
       e.preventDefault();
       apps[Math.max(0, Math.min(apps.length - 1, i + step))].focus();
     };
+    workGrid.onkeydown = (e) => {
+      const list = work();
+      const i = list.indexOf(document.activeElement as HTMLAnchorElement);
+      if (i < 0) return;
+      if (e.key === 'ArrowLeft' && i % 4 === 0) {
+        e.preventDefault();
+        goPage(0);
+        apps[Math.min(3, apps.length - 1)].focus({ preventScroll: true });
+        return;
+      }
+      const step = ({ ArrowRight: 1, ArrowLeft: -1, ArrowDown: 4, ArrowUp: -4 } as Record<string, number>)[e.key];
+      if (!step) return;
+      e.preventDefault();
+      list[Math.max(0, Math.min(list.length - 1, i + step))].focus();
+    };
+    // Tabbing onto the other page brings it into view.
+    pages.addEventListener('focusin', (e) => {
+      const page = (e.target as HTMLElement).closest('.page');
+      const i = [...pages.children].indexOf(page as Element);
+      if (i >= 0 && i !== current()) goPage(i);
+    });
 
-    // Long-press any icon: jiggle mode. Done, Esc or a tap on the wallpaper ends it.
-    const home = document.querySelector<HTMLElement>('[data-home]')!;
+    home.querySelector<HTMLButtonElement>('[data-lock-btn]')!.onclick = () => window.__lock?.();
+
+    // Developer options: tap the clock seven times, like the build number on Android.
+    const devApp = home.querySelector<HTMLElement>('[data-dev-app]')!;
+    const isDev = () => !!window.__eggs?.().includes('dev');
+    devApp.hidden = !isDev();
+    let taps = 0;
+    let last = 0;
+    home.querySelector<HTMLButtonElement>('[data-dev-tap]')!.onclick = () => {
+      const now = Date.now();
+      if (now - last > 2500) taps = 0;
+      last = now;
+      taps++;
+      if (isDev()) {
+        if (taps >= 3) window.__toast?.('No need, you are already a developer.');
+        return;
+      }
+      const left = 7 - taps;
+      if (left <= 0) {
+        window.__egg?.('dev');
+        window.__toast?.('You are now a developer! Developer options is on page two.', 3400);
+        devApp.hidden = false;
+        taps = 0;
+      } else if (left <= 4) {
+        window.__toast?.(`You are now ${left} step${left > 1 ? 's' : ''} away from being a developer.`, 1400);
+      }
+    };
+
+    // First unlock ever: peek at page two once, the way a phone teaches swiping.
+    const peek = () => {
+      try {
+        if (localStorage.getItem('pf-peeked')) return;
+        localStorage.setItem('pf-peeked', '1');
+      } catch {
+        return;
+      }
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches || current() !== 0) return;
+      setTimeout(() => {
+        for (const page of pages.children) {
+          (page as HTMLElement).animate(
+            [{ transform: 'translateX(0)' }, { transform: 'translateX(-38px)' }, { transform: 'translateX(0)' }],
+            { duration: 1000, easing: 'cubic-bezier(0.32, 0.72, 0, 1)' },
+          );
+        }
+      }, 450);
+    };
+    document.addEventListener('pf:unlocked', peek, { once: true });
+
+    // Jiggle mode: long-press an icon with a mouse (on phones a long-press belongs to the browser),
+    // or the button in Notes. Done, Esc or a tap on the wallpaper ends it.
     let timer = 0;
     let swallowClick = false;
+    const start = () => {
+      home.classList.add('jiggle');
+      window.__egg?.('jiggle');
+      navigator.vibrate?.(12);
+    };
     const stop = () => home.classList.remove('jiggle');
-    grid.onpointerdown = (e) => {
-      // Mouse only: on phones a long-press belongs to the browser (link preview menu).
+    try {
+      if (sessionStorage.getItem('pf-jiggle')) {
+        sessionStorage.removeItem('pf-jiggle');
+        setTimeout(start, 500);
+      }
+    } catch {}
+    pages.onpointerdown = (e) => {
       if (e.pointerType !== 'mouse' || !(e.target as HTMLElement).closest('[data-app]')) return;
       timer = window.setTimeout(() => {
-        home.classList.add('jiggle');
+        start();
         swallowClick = true;
-        navigator.vibrate?.(12);
       }, 550);
     };
     const cancel = () => clearTimeout(timer);
-    grid.onpointerup = cancel;
-    grid.onpointerleave = cancel;
-    grid.onpointermove = (e) => {
+    pages.onpointerup = cancel;
+    pages.onpointerleave = cancel;
+    pages.onpointermove = (e) => {
       if (Math.abs(e.movementX) + Math.abs(e.movementY) > 6) cancel();
     };
-    grid.oncontextmenu = (e) => {
+    pages.oncontextmenu = (e) => {
       if (home.classList.contains('jiggle')) e.preventDefault();
     };
-    grid.addEventListener(
+    pages.addEventListener(
       'click',
       (e) => {
         if (swallowClick || home.classList.contains('jiggle')) {
@@ -170,6 +365,38 @@ const photo = photoOf?.screens[(HOME.photo?.screen ?? 1) - 1];
     padding: 62px 0 calc(28px + env(safe-area-inset-bottom));
   }
 
+  /* Two home-screen pages side by side: native horizontal scroll, snapping a page at a time. */
+  .pages {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    /* A swipe past the last page stays here instead of becoming the browser's Back. */
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+  .pages::-webkit-scrollbar {
+    display: none;
+  }
+  .page {
+    flex: 0 0 100%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+  .page::-webkit-scrollbar {
+    display: none;
+  }
+  .page > * {
+    flex-shrink: 0;
+  }
+
   .top {
     padding: 0 20px;
   }
@@ -185,8 +412,25 @@ const photo = photoOf?.screens[(HOME.photo?.screen ?? 1) - 1];
     border-radius: 24px;
     background: var(--card);
     color: var(--wall-ink);
-    text-decoration: none;
     border: 1px solid color-mix(in oklab, var(--wall-ink) 8%, transparent);
+  }
+  .w-left {
+    align-items: flex-start;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: default;
+    user-select: none;
+  }
+  .w-left:active .w-time {
+    opacity: 0.7;
+  }
+  .w-right {
+    color: inherit;
+    text-decoration: none;
   }
   .w-left,
   .w-right {
@@ -296,11 +540,178 @@ const photo = photoOf?.screens[(HOME.photo?.screen ?? 1) - 1];
   }
 
   .all {
-    margin: auto auto 14px;
-    padding-top: 14px;
+    justify-self: start;
     font-size: 12.5px;
     color: var(--wall-ink-2);
     text-underline-offset: 3px;
+  }
+
+  /* Work page */
+  .work {
+    padding: 0 20px;
+    gap: 12px;
+  }
+  .job,
+  .tl {
+    display: block;
+    padding: 16px 18px;
+    border-radius: 24px;
+    background: var(--card);
+    border: 1px solid color-mix(in oklab, var(--wall-ink) 8%, transparent);
+    color: var(--wall-ink);
+    text-decoration: none;
+  }
+  .job {
+    background: #0b3b6e;
+    border-color: transparent;
+    color: #f4f0e8;
+  }
+  .j-label,
+  .tl-label {
+    display: block;
+    font: 400 11px/1 var(--mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0.75;
+  }
+  .j-role {
+    display: block;
+    margin-top: 10px;
+    font: 400 30px/1.02 var(--serif);
+  }
+  .j-tools {
+    display: block;
+    margin-top: 10px;
+    font-size: 13px;
+    opacity: 0.85;
+  }
+  .tl ol {
+    margin: 12px 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    position: relative;
+  }
+  .tl ol::before {
+    content: '';
+    position: absolute;
+    left: 4px;
+    right: 4px;
+    top: 4px;
+    height: 1px;
+    background: color-mix(in oklab, var(--wall-ink) 25%, transparent);
+  }
+  .tl li {
+    position: relative;
+    padding-top: 16px;
+  }
+  .tl li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--wall-ink);
+  }
+  .tl li:last-child::before {
+    background: var(--card);
+    box-shadow: inset 0 0 0 2px var(--wall-ink);
+  }
+  .tl-year {
+    display: block;
+    font: 400 20px/1 var(--serif);
+  }
+  .tl-what {
+    display: block;
+    margin-top: 3px;
+    font-size: 11.5px;
+    line-height: 1.25;
+    color: var(--wall-ink-2);
+  }
+  .work-grid {
+    margin-top: 10px;
+    padding: 0 0;
+  }
+  .work-note {
+    margin: 4px 0 0;
+    font-size: 12.5px;
+    text-align: center;
+    color: var(--wall-ink-2);
+  }
+
+  .pager {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    padding: 6px 20px 10px;
+  }
+  .dots {
+    display: flex;
+    gap: 2px;
+  }
+  .dot {
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+  }
+  .dot::before {
+    content: '';
+    display: block;
+    width: 7px;
+    height: 7px;
+    margin: auto;
+    border-radius: 50%;
+    background: var(--wall-ink);
+    opacity: 0.25;
+    transition:
+      opacity 0.2s ease,
+      transform 0.2s ease;
+  }
+  .dot.on::before {
+    opacity: 0.85;
+  }
+  .pager-side:last-child {
+    display: flex;
+    justify-content: flex-end;
+  }
+  .lockbtn {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: var(--dock);
+    color: var(--wall-ink);
+    cursor: pointer;
+  }
+  .lockbtn svg {
+    width: 13px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+  }
+  .lockbtn:active {
+    transform: scale(0.92);
+  }
+
+  /* Unlocking: the home screen settles in from slightly larger, like iOS. */
+  :global(html.unlocking) .pages {
+    animation: home-in 0.52s cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+  @keyframes home-in {
+    from {
+      transform: scale(1.06);
+      opacity: 0.4;
+    }
   }
 
   .dock {
@@ -360,6 +771,15 @@ const photo = photoOf?.screens[(HOME.photo?.screen ?? 1) - 1];
       padding-top: calc(env(safe-area-inset-top) + 22px);
       overflow-y: auto;
     }
+    .pages {
+      flex: none;
+    }
+    .page {
+      overflow: visible;
+    }
+    .pager {
+      padding-top: 14px;
+    }
     .done {
       top: calc(env(safe-area-inset-top) + 16px);
     }
@@ -377,6 +797,9 @@ const photo = photoOf?.screens[(HOME.photo?.screen ?? 1) - 1];
       display: block;
       margin: 0 4px 18px;
     }
+    .who-work {
+      margin: 0 4px 6px;
+    }
     .who-name {
       margin: 0;
       font: 400 34px/1 var(--serif);
@@ -392,6 +815,15 @@ const photo = photoOf?.screens[(HOME.photo?.screen ?? 1) - 1];
   }
 
   /* Desk, right side */
+  .desk-stack {
+    display: flex;
+    align-items: flex-end;
+    gap: 0;
+  }
+  .desk-stack > :global(.sticky) {
+    margin: 0 0 -18px -14px;
+    position: relative;
+  }
   .summary {
     color: var(--desk-ink);
   }

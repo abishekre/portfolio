@@ -1,0 +1,178 @@
+---
+// Developer options: unlocked by tapping the home-screen clock seven times.
+// Build numbers are real (taken at build time); the rest is measured live in the visitor's browser.
+import { execSync } from 'node:child_process';
+import fs from 'node:fs';
+import Base from '../layouts/Base.astro';
+import AppShell from '../components/AppShell.astro';
+import IndexCard from '../components/IndexCard.astro';
+import { SITE } from '../site';
+import { allProjects } from '../lib/projects';
+import { CERTS } from '../lib/resume';
+
+const THEME = {
+  bg: '#101512',
+  fg: '#DCEFE2',
+  muted: '#7F9A88',
+  accent: '#8BE3A7',
+  onAccent: '#101512',
+  line: '#22302A',
+  display: "'Space Mono', ui-monospace, monospace",
+};
+
+let commit = process.env.VERCEL_GIT_COMMIT_SHA ?? '';
+if (!commit) {
+  try {
+    commit = execSync('git rev-parse HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+  } catch {}
+}
+const astroVersion = JSON.parse(fs.readFileSync('node_modules/astro/package.json', 'utf8')).version as string;
+const projects = await allProjects();
+const screens = projects.reduce((n, p) => n + p.screens.length, 0);
+const built = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Kolkata' }).format(new Date());
+---
+
+<Base title={`Developer options · ${SITE.name}`} description="How this site is built, and how it's running in your browser." statusInk={THEME.fg} tint={THEME.bg}>
+  <Fragment slot="left"><IndexCard compact /></Fragment>
+
+  <AppShell slug="developer" theme={THEME} label="Developer options">
+    <h1>Developer options</h1>
+    <p class="sub">You found it. Here's what's under the glass.</p>
+
+    <h2>This build</h2>
+    <dl>
+      <div><dt>Built</dt><dd>{built} IST</dd></div>
+      {commit && <div><dt>Commit</dt><dd><code>{commit.slice(0, 7)}</code></dd></div>}
+      <div><dt>Framework</dt><dd>Astro {astroVersion}, static, no UI framework</dd></div>
+      <div><dt>Apps</dt><dd>{projects.length}, with {screens} screenshots</dd></div>
+      <div><dt>Wallet</dt><dd>{CERTS.length} passes</dd></div>
+      <div><dt>Content</dt><dd>YAML and Markdown in one folder</dd></div>
+      <div><dt>Tests</dt><dd>Playwright, phone and desktop sizes</dd></div>
+    </dl>
+
+    <h2>This visit, measured now</h2>
+    <dl data-live>
+      <div><dt>Page loaded in</dt><dd data-k="load">…</dd></div>
+      <div><dt>Transferred</dt><dd data-k="bytes">…</dd></div>
+      <div><dt>Requests</dt><dd data-k="reqs">…</dd></div>
+      <div><dt>JavaScript</dt><dd data-k="js">…</dd></div>
+      <div><dt>View transitions</dt><dd data-k="vt">…</dd></div>
+      <div><dt>Works offline</dt><dd data-k="sw">…</dd></div>
+      <div><dt>Network</dt><dd data-k="net">…</dd></div>
+      <div><dt>Screen</dt><dd data-k="screen">…</dd></div>
+    </dl>
+
+    <h2>Hidden on this phone</h2>
+    <ul class="eggs" data-eggs>
+      <li data-egg="dev">Developer options</li>
+      <li data-egg="jiggle">Jiggle mode</li>
+      <li data-egg="offline">Airplane mode</li>
+      <li data-egg="coffee">A refill</li>
+    </ul>
+    <p class="note">Found ones are ticked. The rest stay secret.</p>
+  </AppShell>
+</Base>
+
+<script>
+  function kb(n: number) {
+    return n > 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.round(n / 1024)} KB`;
+  }
+  async function init() {
+    const live = document.querySelector<HTMLElement>('[data-live]');
+    if (!live) return;
+    const set = (k: string, v: string) => {
+      const el = live.querySelector(`[data-k="${k}"]`);
+      if (el) el.textContent = v;
+    };
+    const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+    const res = performance.getEntriesByType('resource') as PerformanceResourceTiming[];
+    const bytes = res.reduce((n, r) => n + (r.transferSize || 0), nav?.transferSize ?? 0);
+    const js = res.filter((r) => r.initiatorType === 'script' || r.name.endsWith('.js')).reduce((n, r) => n + (r.encodedBodySize || 0), 0);
+    set('load', nav ? `${Math.round(nav.loadEventEnd || nav.domContentLoadedEventEnd)} ms` : 'n/a');
+    set('bytes', bytes ? `${kb(bytes)}${bytes < 50 * 1024 ? ' (mostly from cache)' : ''}` : 'from cache');
+    set('reqs', String(res.length + 1));
+    set('js', js ? kb(js) : 'from cache');
+    set('vt', 'startViewTransition' in document ? 'Supported, so apps morph' : 'Not here, so pages swap');
+    const reg = await navigator.serviceWorker?.getRegistration?.().catch(() => undefined);
+    set('sw', reg?.active ? 'Yes, cached for offline' : 'Not yet (needs one visit)');
+    const conn = (navigator as Navigator & { connection?: { effectiveType?: string } }).connection;
+    set('net', navigator.onLine ? (conn?.effectiveType ? conn.effectiveType.toUpperCase() : 'Online') : 'Offline, and still here');
+    set('screen', `${innerWidth}×${innerHeight} at ${devicePixelRatio}×`);
+
+    const found = window.__eggs?.() ?? [];
+    document.querySelectorAll<HTMLElement>('[data-egg]').forEach((li) => {
+      const got = found.includes(li.dataset.egg!);
+      li.classList.toggle('got', got);
+      if (!got) li.textContent = '•••••••';
+    });
+  }
+  document.addEventListener('astro:page-load', init);
+</script>
+
+<style>
+  h1 {
+    margin: 4px 0 0;
+    font: 700 26px/1.1 var(--app-display);
+  }
+  .sub {
+    margin: 8px 0 0;
+    font-size: 14px;
+    color: var(--app-muted);
+  }
+  h2 {
+    margin: 28px 0 10px;
+    font: 400 11px/1 var(--mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--app-accent);
+  }
+  dl {
+    margin: 0;
+    border-top: 1px solid var(--app-line);
+  }
+  dl > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--app-line);
+  }
+  dt {
+    font-size: 14px;
+    color: var(--app-muted);
+  }
+  dd {
+    margin: 0;
+    font-size: 14px;
+    text-align: right;
+  }
+  code {
+    font: 400 13px/1 var(--mono);
+  }
+  .eggs {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 8px;
+  }
+  .eggs li {
+    padding: 11px 14px;
+    border-radius: 12px;
+    background: color-mix(in oklab, var(--app-fg) 6%, transparent);
+    font: 400 14px/1.2 var(--mono);
+    color: var(--app-muted);
+  }
+  .eggs li:global(.got) {
+    color: var(--app-fg);
+  }
+  .eggs li:global(.got)::before {
+    content: '✓ ';
+    color: var(--app-accent);
+  }
+  .note {
+    margin: 10px 0 0;
+    font-size: 12.5px;
+    color: var(--app-muted);
+  }
+</style>

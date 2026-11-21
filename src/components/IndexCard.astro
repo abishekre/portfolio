@@ -27,6 +27,10 @@ const last = parts.length > 1 ? parts.pop() : undefined;
     background: var(--card);
     border: 1px solid var(--card-line);
     transform: rotate(-1.4deg);
+    box-shadow: var(--paper-shadow);
+    /* The lanyard below tucks under this card. */
+    position: relative;
+    z-index: 2;
     color: var(--desk-ink);
   }
   .eyebrow {

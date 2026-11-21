@@ -2,6 +2,7 @@
 import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
+import { blank } from './lib/yaml';
 
 const projects = defineCollection({
   loader: glob({
@@ -13,7 +14,7 @@ const projects = defineCollection({
   schema: z.object({
     name: z.string(),
     // Short name under the home-screen icon.
-    label: z.string().optional(),
+    label: blank(z.string()),
     kind: z.enum(['app', 'client']).default('app'),
     // One line under the name. Keep it under ~80 characters.
     tagline: z.string(),
@@ -26,18 +27,18 @@ const projects = defineCollection({
       onAccent: z.string(),
       line: z.string(),
       display: z.string(),
-      body: z.string().optional(),
+      body: blank(z.string()),
       // Google Fonts `family=` params, joined with &.
-      fonts: z.string().optional(),
+      fonts: blank(z.string()),
     }),
     stats: z.array(z.object({ value: z.string(), label: z.string() })).length(3, 'stats needs exactly 3 numbers'),
     what: z.string(),
     hardTitle: z.string(),
     // Links. Buttons are made from these: Google Play first, then the web, then GitHub (public repos only).
-    playStore: z.url().optional(),
-    web: z.url().optional(),
-    github: z.url().optional(),
-    screensAlt: z.string().optional(),
+    playStore: blank(z.url()),
+    web: blank(z.url()),
+    github: blank(z.url()),
+    screensAlt: blank(z.string()),
     // Landscape images (TV screens, banners) instead of phone screens.
     screensWide: z.boolean().default(false),
     // Shown instead of screenshots when there are none yet (see lumen).
@@ -53,7 +54,7 @@ const projects = defineCollection({
       .optional(),
     notes: z.object({
       stack: z.array(z.string()),
-      tests: z.string().optional(),
+      tests: blank(z.string()),
       platforms: z.string(),
       when: z.coerce.string(),
     }),

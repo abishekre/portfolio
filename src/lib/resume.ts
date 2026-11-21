@@ -1,11 +1,11 @@
 // Reads content/resume.yaml and content/certs.yaml.
 import type { ImageMetadata } from 'astro';
 import { z } from 'astro/zod';
-import { loadYaml } from './yaml';
+import { loadYaml, blank } from './yaml';
 import resumeRaw from '../../content/resume.yaml?raw';
 import certsRaw from '../../content/certs.yaml?raw';
 
-const month = z.coerce.string().optional();
+const month = blank(z.coerce.string());
 
 export const RESUME = loadYaml(
   resumeRaw,
@@ -19,14 +19,14 @@ export const RESUME = loadYaml(
         role: z.string(),
         start: z.coerce.string(),
         end: month,
-        place: z.string().optional(),
+        place: blank(z.string()),
         points: z.array(z.string()).default([]),
         tools: z.array(z.string()).default([]),
       }),
     ),
     projects: z.array(z.string()).default([]),
     clients: z.array(z.object({ industry: z.string(), region: z.string(), product: z.string() })).default([]),
-    skills: z.record(z.string(), z.string()).default({}),
+    skills: z.array(z.object({ group: z.string(), items: z.string() })).default([]),
     education: z.array(z.object({ school: z.string(), degree: z.string(), start: z.coerce.string(), end: month })),
   }),
   'content/resume.yaml',
@@ -43,9 +43,9 @@ const certList = loadYaml(
         name: z.string(),
         issuer: z.string(),
         date: month,
-        image: z.string().optional(),
+        image: blank(z.string()),
         colour: z.string().default('#2A2620'),
-        url: z.url().optional(),
+        url: blank(z.url()),
         show: z.boolean().default(true),
       }),
     ),
@@ -56,7 +56,9 @@ const certList = loadYaml(
 export const CERTS = certList
   .filter((c) => c.show)
   .map((c) => {
-    const image = c.image ? certImages[`/content/certs/${c.image}`]?.default : undefined;
+    // The web editor may store a path ("content/certs/x.png", "/content/certs/x.png"); only the file name matters.
+    const file = c.image?.split('/').pop();
+    const image = file ? certImages[`/content/certs/${file}`]?.default : undefined;
     if (c.image && !image) throw new Error(`content/certs.yaml: "${c.name}" names image ${c.image}, but content/certs/${c.image} isn't there.`);
     return { ...c, image };
   });

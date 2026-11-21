@@ -1,0 +1,228 @@
+---
+// The Wallet app: certifications and badges as passes, stacked like Apple Wallet.
+// Add one in content/certs.yaml (and its image in content/certs/).
+import { Image } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import AppShell from '../components/AppShell.astro';
+import IndexCard from '../components/IndexCard.astro';
+import { SITE } from '../site';
+import { CERTS } from '../lib/resume';
+import { monthYear } from '../lib/yaml';
+
+const THEME = {
+  bg: '#0E0E0F',
+  fg: '#F4F2EE',
+  muted: '#9A9792',
+  accent: '#F4F2EE',
+  onAccent: '#0E0E0F',
+  line: '#2A2A2C',
+  display: "'Inter Tight', system-ui, sans-serif",
+};
+---
+
+<Base title={`Wallet · ${SITE.name}`} description={`Certifications and badges: ${CERTS.map((c) => c.name).join(', ')}.`} statusInk={THEME.fg} tint="#2A2620">
+  <Fragment slot="left"><IndexCard compact /></Fragment>
+
+  <AppShell slug="wallet" theme={THEME} label="Wallet">
+    <h1>Wallet</h1>
+    <p class="sub">{CERTS.length} certifications and badges. Tap one.</p>
+
+    <ol class="passes" data-passes>
+      {
+        CERTS.map((c, i) => (
+          <li class="pass" style={`--c:${c.colour};--i:${i}`}>
+            <button class="pass-head" type="button" aria-expanded="false" data-pass>
+              <span class="issuer">{c.issuer}</span>
+              <span class="name">{c.name}</span>
+            </button>
+            <div class="pass-body">
+              {c.image ? (
+                <Image src={c.image} alt={`${c.name} badge`} width={240} class="badge" />
+              ) : (
+                <span class="badge seal" aria-hidden="true">
+                  {c.issuer.split(/[\s·]+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('')}
+                </span>
+              )}
+              <dl>
+                <div>
+                  <dt>Issued by</dt>
+                  <dd>{c.issuer}</dd>
+                </div>
+                {c.date && (
+                  <div>
+                    <dt>Date</dt>
+                    <dd>{monthYear(c.date)}</dd>
+                  </div>
+                )}
+                <div>
+                  <dt>Holder</dt>
+                  <dd>{SITE.name}</dd>
+                </div>
+              </dl>
+              {c.url && (
+                <a class="verify" href={c.url} target="_blank" rel="noopener">
+                  Verify ↗
+                </a>
+              )}
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+  </AppShell>
+</Base>
+
+<script>
+  function init() {
+    const list = document.querySelector<HTMLElement>('[data-passes]');
+    if (!list) return;
+    const heads = [...list.querySelectorAll<HTMLButtonElement>('[data-pass]')];
+    heads.forEach((h) =>
+      h.addEventListener('click', () => {
+        const opening = h.getAttribute('aria-expanded') !== 'true';
+        heads.forEach((o) => {
+          o.setAttribute('aria-expanded', 'false');
+          o.closest('.pass')!.classList.remove('open');
+        });
+        list.classList.toggle('has-open', opening);
+        if (opening) {
+          h.setAttribute('aria-expanded', 'true');
+          h.closest('.pass')!.classList.add('open');
+        }
+      }),
+    );
+  }
+  document.addEventListener('astro:page-load', init);
+</script>
+
+<style>
+  h1 {
+    margin: 4px 0 0;
+    font: 700 34px/1 var(--app-display);
+    letter-spacing: -0.02em;
+  }
+  .sub {
+    margin: 8px 0 22px;
+    font-size: 14px;
+    color: var(--app-muted);
+  }
+  .passes {
+    margin: 0;
+    padding: 0 0 20px;
+    list-style: none;
+  }
+  /* Stacked: each pass shows its top strip; the open one comes forward in full. */
+  .pass {
+    position: relative;
+    border-radius: 18px;
+    background: var(--c);
+    color: #fff;
+    box-shadow:
+      0 -1px 0 rgba(255, 255, 255, 0.08) inset,
+      0 -8px 24px rgba(0, 0, 0, 0.35);
+    transition: margin 0.45s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .pass + .pass {
+    margin-top: -96px;
+  }
+  .pass-head {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+    min-height: 168px;
+    padding: 16px 18px;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .issuer {
+    font: 600 11px/1 var(--ui);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.8;
+  }
+  .name {
+    max-width: 100%;
+    overflow: hidden;
+    font: 600 19px/1.2 var(--ui);
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .pass.open .name,
+  .pass:last-child .name {
+    white-space: normal;
+  }
+  .has-open .pass.open + .pass {
+    margin-top: 12px;
+  }
+  .pass.open .pass-head {
+    min-height: 0;
+  }
+  .pass-body {
+    max-height: 0;
+    overflow: hidden;
+    padding: 0 18px;
+    transition:
+      max-height 0.45s cubic-bezier(0.32, 0.72, 0, 1),
+      padding 0.45s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .pass.open .pass-body {
+    max-height: 420px;
+    padding-bottom: 18px;
+  }
+  .badge {
+    width: 96px;
+    height: 96px;
+    object-fit: contain;
+    border-radius: 14px;
+  }
+  .seal {
+    display: grid;
+    place-items: center;
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.6);
+    font: 600 22px/1 var(--ui);
+    letter-spacing: 0.02em;
+  }
+  dl {
+    margin: 16px 0 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  dt {
+    font: 600 10.5px/1 var(--ui);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.7;
+  }
+  dd {
+    margin: 4px 0 0;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .verify {
+    display: inline-block;
+    margin-top: 16px;
+    padding: 10px 16px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+    font-size: 13.5px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pass,
+    .pass-body {
+      transition: none;
+    }
+  }
+</style>

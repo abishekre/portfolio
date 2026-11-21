@@ -1,0 +1,224 @@
+# Pages CMS (app.pagescms.org): a web editor for the files in content/.
+# Every save is a commit to GitHub, and Vercel then deploys it.
+# The files stay the source of truth; editing them by hand works just as well.
+
+media:
+  - name: certs
+    label: Certificate images
+    input: content/certs
+    output: content/certs
+    categories: [image]
+  - name: projects
+    label: Project icons and screenshots
+    input: content/projects
+    output: content/projects
+    categories: [image]
+
+content:
+  - name: home
+    label: Home screen
+    type: file
+    path: content/home.yaml
+    format: yaml
+    fields:
+      - name: apps
+        label: Apps, in order (untick Show to hide one)
+        type: object
+        list:
+          collapsible:
+            collapsed: true
+            summary: '{app}'
+        fields:
+          - { name: app, label: App folder, type: string }
+          - { name: show, label: Show on the phone, type: boolean, default: true }
+      - name: nowBuilding
+        label: Now building widget
+        type: object
+        fields:
+          - { name: app, label: App folder, type: string }
+          - { name: note, label: Note, type: string }
+      - name: photo
+        label: Photo under the grid
+        type: object
+        fields:
+          - { name: app, label: App folder, type: string }
+          - { name: screen, label: Which screenshot (1 = first), type: number }
+          - { name: caption, label: Caption, type: string }
+      - name: milestones
+        label: Lock-screen notifications
+        type: object
+        list: true
+        fields:
+          - { name: title, label: Title, type: string }
+          - { name: text, label: Text, type: string }
+          - { name: app, label: Opens (app folder, or work / wallet / resume / notes), type: string }
+
+  - name: site
+    label: About me
+    type: file
+    path: content/site.yaml
+    format: yaml
+    fields:
+      - { name: name, label: Name, type: string }
+      - { name: bio, label: One-line bio, type: text }
+      - { name: description, label: Search and link-preview line, type: string }
+      - { name: city, label: City (for the clock and weather), type: string }
+      - { name: lat, label: Latitude, type: number }
+      - { name: lon, label: Longitude, type: number }
+      - { name: hometown, label: Hometown, type: string }
+      - { name: email, label: Email, type: string }
+      - { name: github, label: GitHub URL, type: string }
+      - { name: linkedin, label: LinkedIn URL, type: string }
+
+  - name: resume
+    label: Résumé
+    type: file
+    path: content/resume.yaml
+    format: yaml
+    fields:
+      - { name: headline, label: Headline, type: string }
+      - { name: location, label: Location line, type: string }
+      - { name: summary, label: Summary, type: text }
+      - name: experience
+        label: Experience
+        type: object
+        list:
+          collapsible:
+            collapsed: true
+            summary: '{role}, {company}'
+        fields:
+          - { name: company, label: Company, type: string }
+          - { name: role, label: Role, type: string }
+          - { name: start, label: Start (YYYY-MM), type: string }
+          - { name: end, label: End (YYYY-MM, empty if current), type: string }
+          - { name: place, label: City, type: string }
+          - { name: points, label: Points, type: string, list: true }
+          - { name: tools, label: Tools, type: string, list: true }
+      - { name: projects, label: Side projects on the PDF (app folders), type: string, list: true }
+      - name: clients
+        label: Clients, by industry (no names)
+        type: object
+        list: true
+        fields:
+          - { name: industry, label: Industry, type: string }
+          - { name: region, label: Region, type: string }
+          - { name: product, label: Product, type: string }
+      - name: skills
+        label: Skills
+        type: object
+        list: true
+        fields:
+          - { name: group, label: Group, type: string }
+          - { name: items, label: Skills, type: string }
+      - name: education
+        label: Education
+        type: object
+        list: true
+        fields:
+          - { name: school, label: School, type: string }
+          - { name: degree, label: Degree, type: string }
+          - { name: start, label: Start (YYYY or YYYY-MM), type: string }
+          - { name: end, label: End (empty if ongoing), type: string }
+
+  - name: certs
+    label: Certifications (Wallet)
+    type: file
+    path: content/certs.yaml
+    format: yaml
+    fields:
+      - name: certs
+        label: Certifications and badges
+        type: object
+        list:
+          collapsible:
+            collapsed: true
+            summary: '{name}'
+        fields:
+          - { name: name, label: Name, type: string }
+          - { name: issuer, label: Issued by, type: string }
+          - { name: date, label: Date (YYYY or YYYY-MM), type: string }
+          - { name: image, label: Badge image, type: image, options: { media: certs } }
+          - { name: colour, label: Pass colour (hex), type: string }
+          - { name: url, label: Verify link, type: string }
+          - { name: show, label: Show, type: boolean, default: true }
+
+  - name: notes
+    label: Notes app
+    type: file
+    path: content/notes.md
+    format: raw
+
+  # Each project is content/projects/<folder>/project.md, with its icon and screens/ beside it.
+  - name: projects
+    label: Projects
+    type: collection
+    path: content/projects
+    subfolders: true
+    format: yaml-frontmatter
+    filename: '{primary}/project.md'
+    view:
+      primary: name
+    fields:
+      - { name: name, label: Name, type: string }
+      - { name: label, label: Short name under the icon, type: string }
+      - { name: kind, label: Kind, type: select, options: { values: [app, client] } }
+      - { name: tagline, label: Tagline, type: string }
+      - { name: status, label: Status, type: string }
+      - { name: playStore, label: Google Play link, type: string }
+      - { name: web, label: Web link, type: string }
+      - { name: github, label: GitHub link (public repos only), type: string }
+      - { name: what, label: What it is, type: text }
+      - { name: hardTitle, label: The hard part (headline), type: string }
+      - name: stats
+        label: Three numbers
+        type: object
+        list: { min: 3, max: 3 }
+        fields:
+          - { name: value, label: Number, type: string }
+          - { name: label, label: Label, type: string }
+      - { name: screensAlt, label: Screenshots description, type: string }
+      - { name: screensWide, label: Landscape screenshots, type: boolean }
+      - name: theme
+        label: Colours and font
+        type: object
+        fields:
+          - { name: bg, type: string }
+          - { name: fg, type: string }
+          - { name: muted, type: string }
+          - { name: accent, type: string }
+          - { name: onAccent, type: string }
+          - { name: line, type: string }
+          - { name: display, type: string }
+          - { name: fonts, type: string }
+      - name: notes
+        label: Build notes
+        type: object
+        fields:
+          - { name: stack, label: Stack, type: string, list: true }
+          - { name: tests, label: Tests, type: string }
+          - { name: platforms, label: Platforms, type: string }
+          - { name: when, label: When, type: string }
+      - name: design
+        label: Design system (shown when there are no screenshots)
+        type: object
+        fields:
+          - { name: title, label: Title, type: string }
+          - name: swatches
+            type: object
+            list: true
+            fields:
+              - { name: name, type: string }
+              - { name: value, label: Colour (hex), type: string }
+              - { name: note, type: string }
+          - name: type
+            label: Type samples
+            type: object
+            list: true
+            fields:
+              - { name: name, type: string }
+              - { name: family, type: string }
+              - { name: weight, type: number }
+              - { name: sample, type: string }
+              - { name: size, type: number }
+          - { name: rules, label: Principles, type: string, list: true }
+      - { name: body, label: The hard part (story, Markdown), type: text }

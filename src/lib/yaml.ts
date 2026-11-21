@@ -8,6 +8,10 @@ export function loadYaml<T extends z.ZodType>(raw: string, schema: T, file: stri
   return result.data;
 }
 
+/** An optional field where an empty box (as the web editor may save it) means "not set". */
+export const blank = <T extends z.ZodType>(schema: T) =>
+  z.preprocess((v) => (v === '' || v === null ? undefined : v), schema.optional());
+
 /** "2026-03" → "Mar 2026", "2019" → "2019". */
 export function monthYear(v: string | undefined) {
   if (!v) return '';

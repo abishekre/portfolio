@@ -1,0 +1,268 @@
+---
+// The Work app: the day job. Everything comes from content/resume.yaml. Clients by industry only.
+import Base from '../layouts/Base.astro';
+import AppShell from '../components/AppShell.astro';
+import IndexCard from '../components/IndexCard.astro';
+import { SITE } from '../site';
+import { RESUME } from '../lib/resume';
+import { monthYear } from '../lib/yaml';
+
+const THEME = {
+  bg: '#0B2A4A',
+  fg: '#F4F0E8',
+  muted: '#A9B8C9',
+  accent: '#8CC2FF',
+  onAccent: '#0B2A4A',
+  line: '#1E4268',
+  display: "'Instrument Serif', Georgia, serif",
+};
+const span = (start: string, end?: string) => `${monthYear(start)} – ${end ? monthYear(end) : 'now'}`;
+const products = [...new Set(RESUME.clients.map((c) => c.product))];
+---
+
+<Base title={`Work · ${SITE.name}`} description={`${RESUME.headline}. ${RESUME.summary}`} statusInk={THEME.fg} tint={THEME.bg}>
+  <Fragment slot="left"><IndexCard compact /></Fragment>
+
+  <AppShell slug="work" theme={THEME} label="Work">
+    <p class="kicker">Day job</p>
+    <h1>{RESUME.headline}</h1>
+    <p class="lede">{RESUME.summary}</p>
+
+    <h2>Where</h2>
+    <ol class="jobs">
+      {
+        RESUME.experience.map((j) => (
+          <li>
+            <span class="when">{span(j.start, j.end)}</span>
+            <p class="role">{j.role}</p>
+            <p class="org">
+              {j.company}
+              {j.place && ` · ${j.place}`}
+            </p>
+            <ul class="points">
+              {j.points.map((pt) => (
+                <li>{pt}</li>
+              ))}
+            </ul>
+            {j.tools.length > 0 && (
+              <ul class="chips" aria-label="Tools">
+                {j.tools.map((t) => (
+                  <li>{t}</li>
+                ))}
+              </ul>
+            )}
+          </li>
+        ))
+      }
+    </ol>
+
+    {
+      RESUME.clients.length > 0 && (
+        <>
+          <h2>Who for</h2>
+          <p class="note">Enterprise customers, described by industry.</p>
+          <ul class="clients">
+            {RESUME.clients.map((c) => (
+              <li>
+                <b>{c.industry}</b>
+                <span>{c.region}</span>
+                <em>{c.product}</em>
+              </li>
+            ))}
+          </ul>
+        </>
+      )
+    }
+
+    {
+      products.length > 0 && (
+        <>
+          <h2>With</h2>
+          <dl class="glossary">
+            {products.includes('Product 360') && (
+              <div>
+                <dt>Product 360</dt>
+                <dd>Informatica's product information management: one trusted record for every product a company sells, fed to every channel.</dd>
+              </div>
+            )}
+            <div>
+              <dt>ActiveVOS</dt>
+              <dd>Process automation that moves data through approvals and workflows.</dd>
+            </div>
+            <div>
+              <dt>IDQ</dt>
+              <dd>Informatica Data Quality: rules that profile, clean and match data before it lands.</dd>
+            </div>
+            {products.includes('MDM') && (
+              <div>
+                <dt>MDM</dt>
+                <dd>Master data management: deciding which record is the truth when systems disagree.</dd>
+              </div>
+            )}
+          </dl>
+        </>
+      )
+    }
+
+    <div class="links">
+      <a class="btn primary" href="/resume">Full résumé</a>
+      <a class="btn" href="/wallet">Certifications</a>
+      <a class="btn" href={SITE.linkedin} target="_blank" rel="noopener">LinkedIn ↗</a>
+    </div>
+  </AppShell>
+</Base>
+
+<style>
+  .kicker {
+    margin: 6px 0 0;
+    font: 400 11.5px/1 var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--app-accent);
+  }
+  h1 {
+    margin: 12px 0 0;
+    font: 400 40px/1 var(--app-display);
+  }
+  .lede {
+    margin: 14px 0 0;
+    font-size: 15.5px;
+    line-height: 1.55;
+    color: var(--app-fg);
+    opacity: 0.9;
+  }
+  h2 {
+    margin: 30px 0 14px;
+    padding-top: 18px;
+    border-top: 1px solid var(--app-line);
+    font: 400 11.5px/1 var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--app-muted);
+  }
+  ol,
+  ul,
+  dl {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .jobs {
+    display: grid;
+    gap: 26px;
+  }
+  .when {
+    font: 400 12px/1 var(--mono);
+    color: var(--app-muted);
+  }
+  .role {
+    margin: 8px 0 0;
+    font: 400 25px/1.05 var(--app-display);
+  }
+  .org {
+    margin: 4px 0 0;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .points {
+    margin-top: 10px;
+    display: grid;
+    gap: 7px;
+  }
+  .points li {
+    position: relative;
+    padding-left: 14px;
+    font-size: 14.5px;
+    line-height: 1.5;
+  }
+  .points li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.62em;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--app-accent);
+  }
+  .chips {
+    margin-top: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .chips li {
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--app-fg) 10%, transparent);
+    font-size: 12.5px;
+    font-weight: 500;
+  }
+  .note {
+    margin: -4px 0 12px;
+    font-size: 13px;
+    color: var(--app-muted);
+  }
+  .clients {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .clients li {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 14px;
+    border-radius: 16px;
+    background: color-mix(in oklab, var(--app-fg) 7%, transparent);
+  }
+  .clients b {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+  .clients span {
+    font-size: 12.5px;
+    color: var(--app-muted);
+  }
+  .clients em {
+    margin-top: 6px;
+    font: normal 400 11px/1 var(--mono);
+    letter-spacing: 0.04em;
+    color: var(--app-accent);
+  }
+  .glossary {
+    display: grid;
+    gap: 12px;
+  }
+  dt {
+    font-weight: 600;
+    font-size: 14.5px;
+  }
+  dd {
+    margin: 2px 0 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--app-muted);
+  }
+  .links {
+    margin-top: 30px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .btn {
+    padding: 12px 16px;
+    border-radius: 999px;
+    border: 1px solid var(--app-line);
+    color: var(--app-fg);
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .btn.primary {
+    background: var(--app-accent);
+    border-color: transparent;
+    color: var(--app-on-accent);
+  }
+</style>

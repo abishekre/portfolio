@@ -5,7 +5,7 @@ import { SITE } from '../site';
 <div class="statusbar" transition:persist="statusbar" aria-hidden="true">
   <span class="sb-time" data-clock>9:41</span>
   <span class="island"></span>
-  <span class="sb-right"><span data-temp></span><span class="battery"><i></i></span></span>
+  <span class="sb-right"><span class="plane" data-plane hidden>✈</span><span data-temp></span><span class="battery"><i></i></span></span>
 </div>
 
 <script define:vars={{ lat: SITE.lat, lon: SITE.lon }}>
@@ -37,7 +37,16 @@ import { SITE } from '../site';
           } catch {}
         })
         .catch(() => {});
+    // Airplane mode: the site keeps working, and says so once.
+    const plane = (off) => document.querySelectorAll('[data-plane]').forEach((el) => (el.hidden = !off));
+    addEventListener('offline', () => {
+      plane(true);
+      window.__toast?.('No internet? This site works offline, like most of my apps.', 4200);
+      window.__egg?.('offline');
+    });
+    addEventListener('online', () => plane(false));
     document.addEventListener('astro:page-load', () => {
+      plane(!navigator.onLine);
       try {
         const c = sessionStorage.getItem('city-temp');
         if (c) showTemp(c);

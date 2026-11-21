@@ -1,0 +1,297 @@
+---
+// The lock screen: shown on a first visit to the home page, and whenever the Lock button is pressed.
+// Hidden in the HTML, so search engines and visitors without JavaScript get the home screen straight away.
+// Unlocks with a tap, Enter or Space, or a swipe up that starts mid-screen (never the bottom edge,
+// which belongs to the phone).
+import { HOME } from '../lib/home';
+import { SITE } from '../site';
+
+const hrefFor = (app?: string) => (app ? `/${app}` : undefined);
+---
+
+<div class="lock" data-lock hidden role="dialog" aria-modal="true" aria-label="Lock screen">
+  <div class="lock-top">
+    <p class="lock-date" data-lock-date></p>
+    <p class="lock-time" data-clock></p>
+    <p class="lock-place">{SITE.city}</p>
+  </div>
+
+  <ul class="notes" aria-label="Notifications">
+    {
+      HOME.milestones.map((m, i) => (
+        <li style={`--i:${i}`}>
+          <a href={hrefFor(m.app) ?? '/'} data-lock-note>
+            <b>{m.title}</b>
+            <span>{m.text}</span>
+          </a>
+        </li>
+      ))
+    }
+    <li style={`--i:${HOME.milestones.length}`} data-riddle>
+      <span class="riddle">
+        <b>Tip</b>
+        <span>Android people know how to turn on developer mode.</span>
+      </span>
+    </li>
+  </ul>
+
+  <button class="open" type="button" data-unlock>Open</button>
+</div>
+
+<script is:inline>
+  (function () {
+    var KEY = 'pf-unlocked';
+    function el() {
+      return document.querySelector('[data-lock]');
+    }
+    function stamp() {
+      var d = el() && el().querySelector('[data-lock-date]');
+      if (d) d.textContent = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Kolkata' }).format(new Date());
+      window.__tick && window.__tick();
+      var riddle = el() && el().querySelector('[data-riddle]');
+      if (riddle && window.__eggs && window.__eggs().indexOf('dev') >= 0) riddle.hidden = true;
+    }
+    function remember() {
+      try {
+        localStorage.setItem(KEY, '1');
+      } catch (e) {}
+    }
+    window.__lock = function (instant) {
+      var l = el();
+      if (!l) return;
+      stamp();
+      l.hidden = false;
+      l.classList.toggle('instant', !!instant);
+      l.classList.remove('gone');
+      requestAnimationFrame(function () {
+        l.classList.add('on');
+        var b = l.querySelector('[data-unlock]');
+        b && b.focus({ preventScroll: true });
+      });
+    };
+    window.__unlock = function () {
+      var l = el();
+      if (!l || l.hidden) return;
+      remember();
+      l.classList.remove('on', 'instant');
+      l.classList.add('gone');
+      document.documentElement.classList.add('unlocking');
+      setTimeout(function () {
+        l.hidden = true;
+        l.classList.remove('gone');
+        document.documentElement.classList.remove('unlocking');
+        document.dispatchEvent(new CustomEvent('pf:unlocked'));
+      }, 520);
+    };
+    // First visit, landing on the home page itself: start locked, before the first paint.
+    var seen = false;
+    try {
+      seen = localStorage.getItem(KEY) === '1';
+    } catch (e) {}
+    if (location.pathname === '/' && !seen && !/bot|crawl|spider|lighthouse/i.test(navigator.userAgent)) window.__lock(true);
+  })();
+</script>
+
+<script>
+  function init() {
+    const lock = document.querySelector<HTMLElement>('[data-lock]');
+    if (!lock) return;
+    const unlock = () => window.__unlock?.();
+
+    lock.querySelector('[data-unlock]')!.addEventListener('click', unlock);
+    lock.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') unlock();
+    });
+    // A notification opens its app (and unlocks for next time).
+    lock.querySelectorAll<HTMLAnchorElement>('[data-lock-note]').forEach((a) =>
+      a.addEventListener('click', () => {
+        try {
+          localStorage.setItem('pf-unlocked', '1');
+        } catch {}
+      }),
+    );
+
+    // Tap anywhere that isn't a notification, or swipe up from the middle of the screen.
+    let y0 = 0;
+    let dy = 0;
+    let tracking = false;
+    lock.addEventListener('pointerdown', (e) => {
+      if ((e.target as HTMLElement).closest('a, button')) return;
+      const r = lock.getBoundingClientRect();
+      // Leave the bottom edge to the phone's own home gesture.
+      if (e.clientY > r.bottom - 48) return;
+      tracking = true;
+      y0 = e.clientY;
+      dy = 0;
+      lock.style.transition = 'none';
+    });
+    lock.addEventListener('pointermove', (e) => {
+      if (!tracking) return;
+      dy = Math.min(0, e.clientY - y0);
+      lock.style.transform = `translateY(${dy * 0.9}px)`;
+    });
+    const end = () => {
+      if (!tracking) return;
+      tracking = false;
+      lock.style.transition = '';
+      lock.style.transform = '';
+      // A tap (barely moved) or a real swipe up both unlock; a small drag springs back.
+      if (dy > -8 || dy < -70) unlock();
+    };
+    lock.addEventListener('pointerup', end);
+    lock.addEventListener('pointercancel', () => {
+      tracking = false;
+      lock.style.transition = '';
+      lock.style.transform = '';
+    });
+  }
+  document.addEventListener('astro:page-load', init);
+</script>
+
+<style>
+  .lock {
+    position: absolute;
+    inset: 0;
+    z-index: 15;
+    display: flex;
+    flex-direction: column;
+    padding: 70px 18px calc(26px + env(safe-area-inset-bottom));
+    color: #f6f1e6;
+    background:
+      radial-gradient(120% 70% at 20% 0%, #5b4a33 0%, transparent 60%),
+      radial-gradient(90% 60% at 100% 100%, #3a2c1d 0%, transparent 65%),
+      #17130e;
+    /* Vertical swipes here are ours; the page underneath isn't scrollable while locked. */
+    touch-action: none;
+    user-select: none;
+    transform: translateY(0);
+    transition:
+      transform 0.52s cubic-bezier(0.32, 0.72, 0, 1),
+      opacity 0.4s ease;
+  }
+  .lock[hidden] {
+    display: none;
+  }
+  .lock:global(.gone) {
+    transform: translateY(-104%);
+    opacity: 0.6;
+  }
+  .lock-top {
+    text-align: center;
+  }
+  .lock-date {
+    margin: 0;
+    font: 500 16px/1 var(--ui);
+    opacity: 0.85;
+  }
+  .lock-time {
+    margin: 6px 0 0;
+    font: 400 96px/0.9 var(--serif);
+    letter-spacing: -0.02em;
+  }
+  .lock-place {
+    margin: 8px 0 0;
+    font: 400 11px/1 var(--mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    opacity: 0.6;
+  }
+
+  .notes {
+    margin: auto 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 8px;
+  }
+  .notes a,
+  .riddle {
+    display: block;
+    padding: 12px 14px;
+    border-radius: 20px;
+    background: rgba(246, 241, 230, 0.13);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    color: inherit;
+    text-decoration: none;
+  }
+  .notes b {
+    display: block;
+    font: 600 12px/1 var(--ui);
+    letter-spacing: 0.01em;
+    opacity: 0.7;
+  }
+  .notes span span,
+  .notes a span {
+    display: block;
+    margin-top: 4px;
+    font: 500 14.5px/1.35 var(--ui);
+  }
+  .riddle {
+    background: rgba(246, 241, 230, 0.07);
+  }
+  .notes li {
+    animation: note-in 0.5s cubic-bezier(0.32, 0.72, 0, 1) both;
+    animation-delay: calc(0.25s + var(--i) * 0.07s);
+  }
+  @keyframes note-in {
+    from {
+      opacity: 0;
+      transform: translateY(14px) scale(0.98);
+    }
+  }
+
+  .open {
+    align-self: center;
+    margin-top: 18px;
+    padding: 11px 26px;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(246, 241, 230, 0.16);
+    color: inherit;
+    font: 600 14px/1 var(--ui);
+    letter-spacing: 0.02em;
+    cursor: pointer;
+  }
+  .open::after {
+    content: '';
+    display: block;
+    width: 120px;
+    height: 5px;
+    margin: 14px auto -2px;
+    border-radius: 3px;
+    background: currentColor;
+    opacity: 0.8;
+  }
+  .open {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  @media (max-width: 767px) {
+    .lock {
+      position: fixed;
+      padding-top: calc(env(safe-area-inset-top) + 48px);
+    }
+  }
+  @media (max-height: 700px) {
+    .lock-time {
+      font-size: 76px;
+    }
+    .notes li:nth-child(n + 3):not([data-riddle]) {
+      display: none;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .lock,
+    .notes li {
+      transition: opacity 0.2s ease;
+      animation: none;
+    }
+    .lock:global(.gone) {
+      transform: none;
+      opacity: 0;
+    }
+  }
+</style>

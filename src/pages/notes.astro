@@ -2,7 +2,8 @@
 import Base from '../layouts/Base.astro';
 import AppShell from '../components/AppShell.astro';
 import IndexCard from '../components/IndexCard.astro';
-import DeskThings from '../components/DeskThings.astro';
+import DeskObjects from '../components/DeskObjects.astro';
+import { SITE as S } from '../site';
 import { PAPER } from '../lib/paper';
 // The text lives in content/notes.md.
 import { Content } from '../../content/notes.md';
@@ -15,10 +16,31 @@ import { SITE } from '../site';
   <AppShell slug="notes" theme={PAPER} label="Notes">
     <p class="date">Notes · {SITE.city}</p>
     <div class="note"><Content /></div>
+    <button class="try" type="button" data-jiggle-try>Try it: edit the home screen</button>
+    <p class="found" data-found hidden></p>
   </AppShell>
 
-  <Fragment slot="right"><DeskThings thing="pen" /></Fragment>
+  <Fragment slot="right"><DeskObjects kind="sticky" title="Say hello" text={S.email} href={`mailto:${S.email}`} /></Fragment>
 </Base>
+
+<script>
+  import { navigate } from 'astro:transitions/client';
+  function init() {
+    const btn = document.querySelector<HTMLButtonElement>('[data-jiggle-try]');
+    if (!btn) return;
+    btn.onclick = () => {
+      try {
+        sessionStorage.setItem('pf-jiggle', '1');
+      } catch {}
+      navigate('/');
+    };
+    const found = window.__eggs?.().length ?? 0;
+    const line = document.querySelector<HTMLElement>('[data-found]')!;
+    line.textContent = `Things hidden on this phone: ${found} of 4 found.`;
+    line.hidden = false;
+  }
+  document.addEventListener('astro:page-load', init);
+</script>
 
 <style>
   .date {
@@ -35,6 +57,23 @@ import { SITE } from '../site';
   .note :global(h2) {
     margin: 32px 0 10px;
     font: 400 28px/1.05 var(--serif);
+  }
+  .try {
+    margin: 4px 0 0;
+    padding: 11px 16px;
+    border: 1px solid var(--app-line);
+    border-radius: 999px;
+    background: none;
+    color: var(--app-fg);
+    font: 600 14px/1 var(--ui);
+    cursor: pointer;
+  }
+  .found {
+    margin: 26px 0 0;
+    padding-top: 14px;
+    border-top: 1px dashed var(--app-line);
+    font: 400 12px/1.4 var(--mono);
+    color: var(--app-muted);
   }
   .note :global(p) {
     margin: 0 0 14px;

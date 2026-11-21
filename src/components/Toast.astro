@@ -1,0 +1,72 @@
+---
+// An Android-style toast inside the phone, and the record of which easter eggs have been found.
+// Pages call window.__toast('text') and window.__egg('dev' | 'offline' | 'coffee' | 'jiggle').
+---
+
+<div class="toast" data-toast role="status" aria-live="polite"></div>
+
+<script is:inline>
+  (function () {
+    if (window.__toast) return;
+    var timer = 0;
+    window.__toast = function (text, ms) {
+      var el = document.querySelector('[data-toast]');
+      if (!el) return;
+      el.textContent = text;
+      el.classList.add('show');
+      clearTimeout(timer);
+      timer = setTimeout(function () {
+        el.classList.remove('show');
+      }, ms || 2600);
+    };
+    window.__eggs = function () {
+      try {
+        return JSON.parse(localStorage.getItem('pf-eggs') || '[]');
+      } catch (e) {
+        return [];
+      }
+    };
+    window.__egg = function (id) {
+      var found = window.__eggs();
+      if (found.indexOf(id) >= 0) return false;
+      found.push(id);
+      try {
+        localStorage.setItem('pf-eggs', JSON.stringify(found));
+      } catch (e) {}
+      document.dispatchEvent(new CustomEvent('pf:egg', { detail: id }));
+      return true;
+    };
+  })();
+</script>
+
+<style>
+  .toast {
+    position: absolute;
+    z-index: 40;
+    left: 50%;
+    bottom: calc(96px + env(safe-area-inset-bottom));
+    max-width: calc(100% - 48px);
+    padding: 11px 16px;
+    border-radius: 999px;
+    background: rgba(32, 30, 28, 0.94);
+    color: #f4f0e8;
+    font: 500 13.5px/1.3 var(--ui);
+    text-align: center;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+    transform: translate(-50%, 12px);
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      opacity 0.2s ease,
+      transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .toast:global(.show) {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  @media (max-width: 767px) {
+    .toast {
+      position: fixed;
+    }
+  }
+</style>
