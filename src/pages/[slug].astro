@@ -73,7 +73,7 @@ const { Content } = await render(project);
           <ul class="type">
             {d.design.type.map((t) => (
               <li>
-                <span class="sample" style={`font-family:'${t.family}',system-ui,sans-serif;font-weight:${t.weight};font-size:${t.size}px`}>
+                <span class="sample" style={`font-family:'${t.family}','${t.family} Variable',system-ui,sans-serif;font-weight:${t.weight};font-size:${t.size}px`}>
                   {t.sample}
                 </span>
                 <small>

@@ -29,14 +29,14 @@ const notes = HOME.milestones.slice(0, 3).map((m) => {
 ---
 
 <div class="lock" data-lock hidden role="dialog" aria-modal="true" aria-label="Lock screen" tabindex="-1">
-  <Image class="wall" src={wallpaper} alt="" widths={[430, 860, 1290]} sizes="(max-width: 767px) 100vw, 390px" loading="eager" />
+  <Image class="wall" src={wallpaper} alt="" widths={[430, 860, 1290]} sizes="(max-width: 767px) 100vw, 390px" loading="lazy" decoding="async" />
 
   <div class="when" data-lock-clockwrap>
     <p class="date" data-lock-date></p>
     <p class="time" data-clock></p>
   </div>
 
-  <Image class="city" src={city} alt="" widths={[430, 860, 1290]} sizes="(max-width: 767px) 100vw, 390px" loading="eager" />
+  <Image class="city" src={city} alt="" widths={[430, 860, 1290]} sizes="(max-width: 767px) 100vw, 390px" loading="lazy" decoding="async" />
 
   <ul class="notes" aria-label="Notifications">
     {
@@ -200,7 +200,7 @@ const notes = HOME.milestones.slice(0, 3).map((m) => {
     background: #3a2320;
     touch-action: none;
     user-select: none;
-    font-family: 'Archivo', var(--ui);
+    font-family: 'Archivo Variable', var(--ui);
   }
   .lock[hidden] {
     display: none;
@@ -274,14 +274,14 @@ const notes = HOME.milestones.slice(0, 3).map((m) => {
   }
   .date {
     margin: 0;
-    font: 600 17px/1 'Archivo', var(--ui);
+    font: 600 17px/1 'Archivo Variable', var(--ui);
     font-stretch: 100%;
     letter-spacing: 0.01em;
     opacity: 0.92;
   }
   .time {
     margin: 4px 0 0;
-    font: 800 128px/0.86 'Archivo', var(--ui);
+    font: 800 128px/0.86 'Archivo Variable', var(--ui);
     font-stretch: 62%;
     letter-spacing: -0.01em;
     font-variant-numeric: tabular-nums;
@@ -330,7 +330,7 @@ const notes = HOME.milestones.slice(0, 3).map((m) => {
     min-width: 0;
   }
   .n-body b {
-    font: 700 14px/1.2 'Archivo', var(--ui);
+    font: 700 14px/1.2 'Archivo Variable', var(--ui);
   }
   .n-body span {
     font: 400 14px/1.3 var(--ui);
@@ -393,7 +393,7 @@ const notes = HOME.milestones.slice(0, 3).map((m) => {
     border: 0;
     background: none;
     color: inherit;
-    font: 600 13px/1 'Archivo', var(--ui);
+    font: 600 13px/1 'Archivo Variable', var(--ui);
     letter-spacing: 0.01em;
     opacity: 0.9;
     cursor: pointer;

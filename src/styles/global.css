@@ -16,10 +16,10 @@
   --paper-shadow: 0 1px 1px rgba(40, 30, 15, 0.14), 0 3px 6px -2px rgba(40, 30, 15, 0.16), 0 16px 26px -14px rgba(40, 30, 15, 0.45);
 
   --serif: 'Instrument Serif', Georgia, serif;
-  --ui: 'Inter Tight', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --ui: 'Inter Tight Variable', 'Inter Tight', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --mono: 'Space Mono', ui-monospace, Consolas, monospace;
   /* The phone's own UI face, like an OS font: Archivo, falling back to Inter Tight. */
-  --sys: 'Archivo', 'Inter Tight', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --sys: 'Archivo Variable', 'Inter Tight Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
   --ease-out: cubic-bezier(0.2, 0.9, 0.25, 1);
   /* Corner of an icon, and of the phone's screen; an opening app morphs between them. */

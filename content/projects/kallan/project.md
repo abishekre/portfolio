@@ -10,7 +10,7 @@ theme:
   onAccent: '#FFF6E0'
   line: '#1A1411'
   display: "'Bungee', system-ui, sans-serif"
-  body: "'Archivo', system-ui, sans-serif"
+  body: "'Archivo Variable', system-ui, sans-serif"
   fonts: family=Bungee&family=Archivo:wght@400;500;700
 stats:
   - { value: '265', label: word pairs }

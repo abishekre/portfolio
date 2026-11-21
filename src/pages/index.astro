@@ -36,13 +36,13 @@ const timeline = [
             <p class="who-bio">{SITE.bio}</p>
           </div>
           <div class="widget">
-            <button class="w-left" type="button" data-dev-tap aria-label={`${SITE.city} time`}>
+            <button class="w-left" type="button" data-dev-tap>
               <span class="w-time" data-clock></span>
               <span class="w-place">{SITE.city} <span data-temp></span></span>
             </button>
             {
               building && (
-                <a class="w-right" href={`/${building.id}`} aria-label={`Now building: ${building.data.name}`}>
+                <a class="w-right" href={`/${building.id}`}>
                   <span class="w-label">Now building</span>
                   <span class="w-what">{building.data.label ?? building.data.name}</span>
                   <span class="w-sub">{HOME.nowBuilding?.note}</span>

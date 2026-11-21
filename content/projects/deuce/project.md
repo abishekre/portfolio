@@ -9,7 +9,7 @@ theme:
   accent: '#17191C'
   onAccent: '#F3F1EB'
   line: '#E0DDD3'
-  display: "'Inter Tight', system-ui, sans-serif"
+  display: "'Inter Tight Variable', 'Inter Tight', system-ui, sans-serif"
 stats:
   - { value: 'BWF', label: group standings, to the letter }
   - { value: '0', label: scores stored. All rebuilt from rallies. }
