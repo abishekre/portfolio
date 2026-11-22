@@ -72,7 +72,7 @@ const person = {
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="theme-color" content="#d9d1c1" />
+    <meta name="theme-color" content="#d9d1c1" data-chrome />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     {
       fontHref && (
@@ -146,13 +146,16 @@ const person = {
           from = location.pathname;
           var to = e.to.pathname;
           // Which way the clipboard on the desk turns: back when going home, forward otherwise.
-          window.__navDir = to === '/' ? 'back' : 'forward';
+          // (Links marked data-dir, like ← previous / next → between apps, say which way themselves.)
+          var dirEl = e.sourceElement && e.sourceElement.closest && e.sourceElement.closest('[data-dir]');
+          window.__navDir = dirEl ? dirEl.getAttribute('data-dir') : to === '/' ? 'back' : 'forward';
           if (from === '/') {
             var src = e.sourceElement && e.sourceElement.closest && e.sourceElement.closest('[data-app]');
             tapped = { path: to, index: src ? apps().indexOf(src) : -1 };
             vt = nameIcon(src || iconFor(to, -1)) ? 'open' : '';
           } else {
-            vt = to === '/' ? 'close' : '';
+            // App to app with ← / →: a sideways push, like moving between screens on a phone.
+            vt = to === '/' ? 'close' : dirEl ? (window.__navDir === 'back' ? 'prev' : 'next') : '';
           }
           setVt();
         });
@@ -248,6 +251,35 @@ const person = {
     </div>
     <!-- This page's sheet for the clipboard on the desk (which persists between pages). -->
     <template id="desk-sheet"><DeskSheet sheet={sheet} /></template>
+    <script is:inline>
+      // The browser's own bars (address bar, top or bottom) and the page behind them take the colour
+      // of whatever is on screen: the home wallpaper, the open app, or the lock screen. On a phone that
+      // makes the browser look like part of the phone instead of a beige frame around it.
+      (function () {
+        function chrome() {
+          var meta = document.querySelector('meta[data-chrome]');
+          var lock = document.querySelector('[data-lock]');
+          var app = document.querySelector('[data-appview]');
+          var screen = document.querySelector('.screen');
+          var c;
+          if (lock && !lock.hidden) c = '#3a2320';
+          else if (app) c = getComputedStyle(app).backgroundColor;
+          else if (screen) c = getComputedStyle(screen).backgroundColor;
+          var phone = innerWidth < 768;
+          // On a computer the browser sits around the desk, so it takes the desk's colour.
+          if (!phone) c = getComputedStyle(document.body).getPropertyValue('--desk') || c;
+          if (meta && c) meta.setAttribute('content', c.trim());
+          document.documentElement.style.setProperty('--chrome', phone && c ? c.trim() : '');
+        }
+        window.__chrome = chrome;
+        chrome();
+        document.addEventListener('astro:after-swap', chrome);
+        document.addEventListener('astro:page-load', chrome);
+        document.addEventListener('pf:theme', chrome);
+        document.addEventListener('pf:unlocked', chrome);
+        addEventListener('resize', chrome);
+      })();
+    </script>
     <!-- Real time in every clock before the first paint, not a 9:41 placeholder. -->
     <script is:inline>window.__tick && window.__tick();</script>
     {

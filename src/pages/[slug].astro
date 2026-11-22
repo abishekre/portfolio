@@ -132,8 +132,8 @@ const { Content } = await render(project);
     </div>
 
     <nav class="pn" aria-label="More projects">
-      <a href={`/${prev.id}`}>← {prev.data.label ?? prev.data.name}</a>
-      <a href={`/${next.id}`}>{next.data.label ?? next.data.name} →</a>
+      <a href={`/${prev.id}`} data-dir="back">← {prev.data.label ?? prev.data.name}</a>
+      <a href={`/${next.id}`} data-dir="forward">{next.data.label ?? next.data.name} →</a>
     </nav>
   </AppShell>
 

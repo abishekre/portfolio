@@ -126,6 +126,10 @@ const vars = [
   }
 
   @media (max-width: 767px) {
+    /* A real phone already shows its own home indicator (and maybe the browser's bar); don't draw a second. */
+    .homebar {
+      display: none;
+    }
     .bar {
       padding-top: calc(env(safe-area-inset-top) + 14px);
     }

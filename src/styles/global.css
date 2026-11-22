@@ -57,8 +57,11 @@ body {
   height: 100%;
 }
 
+html {
+  background: var(--chrome, var(--desk));
+}
 body {
-  background: var(--desk);
+  background: var(--chrome, var(--desk));
   color: var(--desk-ink);
   font-family: var(--ui);
   -webkit-font-smoothing: antialiased;
@@ -202,6 +205,53 @@ button {
   :root {
     --screen-r: 0px;
   }
+}
+
+/* Between apps (← previous / next →): the new app slides in from the side it lives on,
+   the old one slides away a little slower and dims, as a phone pushes one screen over another. */
+:root[data-vt='next']::view-transition-group(app),
+:root[data-vt='prev']::view-transition-group(app) {
+  animation: none;
+}
+:root[data-vt='next']::view-transition-new(app) {
+  animation: push-in-right 0.5s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+:root[data-vt='next']::view-transition-old(app) {
+  animation: push-out-left 0.5s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+:root[data-vt='prev']::view-transition-new(app) {
+  animation: push-in-left 0.5s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+:root[data-vt='prev']::view-transition-old(app) {
+  animation: push-out-right 0.5s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+@keyframes push-in-right {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes push-out-left {
+  to {
+    transform: translateX(-28%);
+    filter: brightness(0.75);
+  }
+}
+@keyframes push-in-left {
+  from {
+    transform: translateX(-28%);
+    filter: brightness(0.75);
+  }
+}
+@keyframes push-out-right {
+  to {
+    transform: translateX(100%);
+  }
+}
+:root[data-vt='prev']::view-transition-old(app) {
+  z-index: 2;
+}
+::view-transition-image-pair(app) {
+  isolation: isolate;
 }
 
 /* Calm motion (Control Center): treat everything as reduced motion. */

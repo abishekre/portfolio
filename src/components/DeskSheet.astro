@@ -14,11 +14,7 @@ const { sheet } = Astro.props;
   {sheet.subtitle && <p class="s">{sheet.subtitle}</p>}
   {
     sheet.chips && sheet.chips.length > 0 && (
-      <ul class="chips">
-        {sheet.chips.map((c) => (
-          <li>{c}</li>
-        ))}
-      </ul>
+      <p class="stack">{sheet.chips.join(' · ')}</p>
     )
   }
   {

@@ -16,8 +16,8 @@ apps:
 
 # The widget at the top of the home screen. Delete these lines to hide it.
 nowBuilding:
-  app: deuce
-  note: Google sign-in, then ratings
+  app: kallan
+  note: In testing for Google Play · Lumen on the side
 
 # The photo under the grid: an app, and which of its screens (1 = the first).
 # Delete these lines to hide it.

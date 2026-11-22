@@ -111,6 +111,7 @@ const notes = HOME.milestones.slice(0, 3).map((m) => {
         }, 600);
       }
       navigator.vibrate && !instant && navigator.vibrate(8);
+      window.__chrome && window.__chrome();
       requestAnimationFrame(function () {
         l.classList.add('on');
         // Focus the screen itself (no ring), so Enter, Space and Esc work straight away.

@@ -64,7 +64,7 @@ const qr = await qrSvg();
       const now = performance.now();
       if (lastT && now - lastT < 80) {
         const vx = (e.clientX - lastX) / Math.max(8, now - lastT);
-        swing.kick(Math.max(-40, Math.min(40, vx * 18)));
+        swing.kick(Math.max(-40, Math.min(40, -vx * 18))); // pushed the way the cursor moves
       }
       lastX = e.clientX;
       lastT = now;
@@ -111,7 +111,8 @@ const qr = await qrSvg();
       moved = Math.max(moved, Math.abs(e.clientX - downAt));
       if (moved < 4 || calm()) return;
       const p = pivot();
-      const a = Math.max(-38, Math.min(38, (Math.atan2(e.clientX - p.x, e.clientY - p.y) * 180) / Math.PI));
+      // Hung from above, a positive CSS rotation swings the card's bottom to the left; so drag right = negative.
+      const a = Math.max(-38, Math.min(38, (-Math.atan2(e.clientX - p.x, e.clientY - p.y) * 180) / Math.PI));
       vel = (a - prevA) * 60;
       prevA = a;
       swing.set(a);
