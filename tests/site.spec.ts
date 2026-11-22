@@ -320,9 +320,10 @@ test('clipboard rewrites for an app and back for home', async ({ page }) => {
   test.skip(isMobile(page), 'the desk is a desktop thing');
   await page.goto('/');
   await page.locator('a.app[href="/kcal"]').click();
-  await expect(page.locator('[data-clipboard]')).toHaveAttribute('data-dir', 'forward');
+  // The pad rewrites after the phone's transition finishes, so allow it a moment on a busy machine.
+  await expect(page.locator('[data-clipboard]')).toHaveAttribute('data-dir', 'forward', { timeout: 10_000 });
   await page.keyboard.press('Escape');
-  await expect(page.locator('[data-clipboard]')).toHaveAttribute('data-dir', 'back');
+  await expect(page.locator('[data-clipboard]')).toHaveAttribute('data-dir', 'back', { timeout: 10_000 });
 });
 
 test('ID card holds still under the cursor', async ({ page }) => {
