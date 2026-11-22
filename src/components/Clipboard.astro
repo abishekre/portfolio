@@ -22,14 +22,20 @@ const { sheet } = Astro.props;
   import { calm } from '../lib/spring';
 
   let settle = 0;
+  let pending = 0;
   function turnTo() {
     const board = document.querySelector<HTMLElement>('[data-clipboard]');
     const tpl = document.querySelector<HTMLTemplateElement>('#desk-sheet');
     if (!board || !tpl) return;
     const sheet = board.querySelector<HTMLElement>('.sheet');
     const nextId = tpl.content.querySelector('[data-sheet-id]')?.getAttribute('data-sheet-id');
-    if (!sheet || !nextId || sheet.querySelector('[data-sheet-id]')?.getAttribute('data-sheet-id') === nextId) return;
+    if (!sheet || !nextId) return;
+    // Where the pad is heading (not what it shows right now, which may still be mid-rewrite).
+    const heading = sheet.dataset.target ?? sheet.querySelector('[data-sheet-id]')?.getAttribute('data-sheet-id');
+    if (heading === nextId) return;
+    sheet.dataset.target = nextId;
     board.dataset.dir = window.__navDir === 'back' ? 'back' : 'forward';
+    clearTimeout(pending); // a newer navigation replaces a rewrite that hasn't happened yet
 
     const write = () => {
       sheet.replaceChildren(tpl.content.cloneNode(true));
@@ -43,7 +49,7 @@ const { sheet } = Astro.props;
     // The old notes lift away first, then the new ones are written in.
     sheet.classList.remove('writing');
     sheet.classList.add('erasing');
-    setTimeout(write, 220);
+    pending = window.setTimeout(write, 220);
   }
 
   // After the phone's own transition has finished (page-load), so the two motions follow each other
