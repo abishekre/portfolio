@@ -1,7 +1,6 @@
 ---
-// A legal pad on a clipboard. It persists across pages. Opening an app turns the top page up over
-// the clip (it stays folded back there, a lip of paper behind the clip) to show that app's build notes;
-// going home brings the page back down. Every line of text sits on the 24px ruling.
+// A legal pad on a clipboard. It persists across pages. When a page has different notes, the old notes
+// lift away like fading ink and the new ones write themselves in, line by line; the page never moves.
 import DeskSheet from './DeskSheet.astro';
 import type { DeskSheet as Sheet } from '../lib/sheet';
 interface Props {
@@ -11,9 +10,8 @@ const { sheet } = Astro.props;
 ---
 
 <section class="board" data-clipboard aria-label="Notes on the clipboard" aria-live="polite">
-  <span class="lip" data-lip aria-hidden="true"><i></i><i></i><i></i></span>
   <span class="clip" aria-hidden="true"><i></i></span>
-  <div class="pad" data-pad data-turned="0">
+  <div class="pad" data-pad>
     <span class="edge e2" aria-hidden="true"></span>
     <span class="edge e1" aria-hidden="true"></span>
     <div class="sheet current"><DeskSheet sheet={sheet} /></div>
@@ -23,53 +21,29 @@ const { sheet } = Astro.props;
 <script>
   import { calm } from '../lib/spring';
 
+  let settle = 0;
   function turnTo() {
     const board = document.querySelector<HTMLElement>('[data-clipboard]');
     const tpl = document.querySelector<HTMLTemplateElement>('#desk-sheet');
     if (!board || !tpl) return;
-    const pad = board.querySelector<HTMLElement>('[data-pad]')!;
+    const sheet = board.querySelector<HTMLElement>('.sheet');
     const nextId = tpl.content.querySelector('[data-sheet-id]')?.getAttribute('data-sheet-id');
-    const top = pad.querySelector<HTMLElement>('.sheet.current');
-    if (!nextId || !top || top.querySelector('[data-sheet-id]')?.getAttribute('data-sheet-id') === nextId) return;
+    if (!sheet || !nextId || sheet.querySelector('[data-sheet-id]')?.getAttribute('data-sheet-id') === nextId) return;
+    board.dataset.dir = window.__navDir === 'back' ? 'back' : 'forward';
 
-    // Finish anything still moving from a quick earlier navigation.
-    pad.querySelectorAll('.sheet:not(.current)').forEach((s) => s.remove());
-    pad.querySelectorAll('.sheet').forEach((s) => s.classList.remove('turning-up', 'coming-down', 'revealed'));
-
-    const fresh = top.cloneNode(false) as HTMLElement; // same scoped-style attributes as the top page
-    fresh.className = 'sheet current writing';
-    setTimeout(() => fresh.classList.remove('writing'), 2200);
-    fresh.append(tpl.content.cloneNode(true));
-
-    const back = window.__navDir === 'back';
-    const turned = Number(pad.dataset.turned ?? 0);
-    pad.dataset.turned = String(Math.max(0, Math.min(3, turned + (back ? -1 : 1))));
-    board.dataset.dir = back ? 'back' : 'forward';
-
-    if (calm()) {
-      top.replaceWith(fresh);
-      return;
-    }
-    top.classList.remove('current');
-    if (!back) {
-      // Forward: the new page is underneath; the top page turns up over the clip and stays there.
-      pad.insertBefore(fresh, top);
-      fresh.classList.add('revealed');
-      top.classList.add('turning-up');
-      top.addEventListener('animationend', () => top.remove(), { once: true });
-    } else {
-      // Back: a page comes down from behind the clip, on top of the current one.
-      top.after(fresh);
-      fresh.classList.add('coming-down');
-      fresh.addEventListener(
-        'animationend',
-        () => {
-          fresh.classList.remove('coming-down');
-          top.remove();
-        },
-        { once: true },
-      );
-    }
+    const write = () => {
+      sheet.replaceChildren(tpl.content.cloneNode(true));
+      sheet.classList.remove('erasing');
+      if (calm()) return;
+      sheet.classList.add('writing');
+      clearTimeout(settle);
+      settle = window.setTimeout(() => sheet.classList.remove('writing'), 1400);
+    };
+    if (calm()) return write();
+    // The old notes lift away first, then the new ones are written in.
+    sheet.classList.remove('writing');
+    sheet.classList.add('erasing');
+    setTimeout(write, 220);
   }
 
   // After the phone's own transition has finished (page-load), so the two motions follow each other
@@ -77,7 +51,7 @@ const { sheet } = Astro.props;
   document.addEventListener('astro:page-load', turnTo);
   // The desk is moved into each new page, which would restart any half-finished writing; settle it first.
   document.addEventListener('astro:before-swap', () => {
-    document.querySelectorAll('[data-pad] .sheet').forEach((sh) => sh.classList.remove('writing', 'revealed'));
+    document.querySelectorAll('[data-pad] .sheet').forEach((sh) => sh.classList.remove('writing'));
   });
 </script>
 
@@ -121,45 +95,6 @@ const { sheet } = Astro.props;
     border-radius: 6px;
     background: linear-gradient(#8d8d89, #c9c9c5);
     box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
-  }
-
-  /* Pages turned up over the clip: their backs show as a lip of paper above it, one per page. */
-  .lip {
-    position: absolute;
-    z-index: 3;
-    left: 22px;
-    right: 22px;
-    top: -2px;
-    height: 0;
-  }
-  .lip i {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 14px;
-    border-radius: 3px 3px 0 0;
-    background: linear-gradient(#efe9dc, #e2dacb);
-    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.12);
-    transform-origin: 50% 100%;
-    transform: scaleY(0);
-    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
-  }
-  .lip i:nth-child(2) {
-    left: 3px;
-    right: 3px;
-    bottom: 3px;
-  }
-  .lip i:nth-child(3) {
-    left: 6px;
-    right: 6px;
-    bottom: 6px;
-  }
-  .board:has([data-turned='1']) .lip i:nth-child(1),
-  .board:has([data-turned='2']) .lip i:nth-child(-n + 2),
-  .board:has([data-turned='3']) .lip i {
-    transform: scaleY(1);
-    transition-delay: 0.68s;
   }
 
   .pad {
@@ -224,78 +159,15 @@ const { sheet } = Astro.props;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
     transform-origin: 50% 0;
   }
-  /* Turning a page: it lifts towards you on its binding, passes edge-on, shows its plain back,
-     and lies over the top of the clip before joining the turned pages (the lip). Back: the reverse. */
-  .sheet.turning-up,
-  .sheet.coming-down {
-    z-index: 6;
-    transform-style: preserve-3d;
+  /* The old notes lift away like ink fading off the page. */
+  .sheet :global(.sheet-body) {
+    transition:
+      opacity 0.22s ease,
+      filter 0.22s ease;
   }
-  .sheet.turning-up {
-    animation: turn-up 0.8s cubic-bezier(0.45, 0.05, 0.25, 1) forwards;
-  }
-  .sheet.coming-down {
-    animation: turn-up 0.8s cubic-bezier(0.45, 0.05, 0.25, 1) reverse both;
-  }
-  @keyframes turn-up {
-    0% {
-      transform: rotateX(0deg);
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
-      opacity: 1;
-    }
-    35% {
-      box-shadow: 0 40px 40px -20px rgba(0, 0, 0, 0.3);
-    }
-    85% {
-      opacity: 1;
-    }
-    100% {
-      transform: rotateX(176deg);
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-      opacity: 0;
-    }
-  }
-  /* Past edge-on you see the back of the page: plain paper, no writing, no ruling. */
-  .sheet.turning-up::after,
-  .sheet.coming-down::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(to bottom, #ebe5d8, #f4efe5);
+  .sheet:global(.erasing) :global(.sheet-body) {
     opacity: 0;
-    animation: back-face 0.8s cubic-bezier(0.45, 0.05, 0.25, 1) forwards;
-  }
-  .sheet.coming-down::after {
-    animation-direction: reverse;
-    animation-fill-mode: both;
-  }
-  @keyframes back-face {
-    0%,
-    49% {
-      opacity: 0;
-    }
-    51%,
-    100% {
-      opacity: 1;
-    }
-  }
-  /* The page underneath sits in the turning page's shadow, which lifts away as it passes. */
-  .sheet.revealed::before {
-    content: '';
-    position: absolute;
-    z-index: 1;
-    inset: 0;
-    background: linear-gradient(to bottom, rgba(40, 28, 15, 0.22), rgba(40, 28, 15, 0.04) 70%, transparent);
-    pointer-events: none;
-    animation: lift-shadow 0.8s ease-out forwards;
-  }
-  @keyframes lift-shadow {
-    from {
-      opacity: 1;
-    }
-    to {
-      opacity: 0;
-    }
+    filter: blur(1.5px);
   }
 
   /* Written by hand in pen, each line sitting on the 24px ruling. */
@@ -347,15 +219,14 @@ const { sheet } = Astro.props;
   }
   /* A new page writes itself in, line by line, just after it lands. */
   .sheet:global(.writing) :global(.sheet-body > *) {
-    animation: write 0.42s cubic-bezier(0.4, 0, 0.2, 1) both;
+    animation: write 0.38s cubic-bezier(0.4, 0, 0.2, 1) both;
   }
-  .sheet:global(.writing) :global(.sheet-body > :nth-child(1)) { animation-delay: 0.5s; }
-  .sheet:global(.writing) :global(.sheet-body > :nth-child(2)) { animation-delay: 0.6s; }
-  .sheet:global(.writing) :global(.sheet-body > :nth-child(3)) { animation-delay: 0.74s; }
-  .sheet:global(.writing) :global(.sheet-body > :nth-child(4)) { animation-delay: 0.86s; }
-  .sheet:global(.writing) :global(.sheet-body > :nth-child(5)) { animation-delay: 0.98s; }
-  .sheet:global(.writing) :global(.sheet-body > :nth-child(6)) { animation-delay: 1.1s; }
-  .sheet:global(.writing) :global(.sheet-body > :nth-child(7)) { animation-delay: 1.22s; }
+  .sheet:global(.writing) :global(.sheet-body > :nth-child(2)) { animation-delay: 0.07s; }
+  .sheet:global(.writing) :global(.sheet-body > :nth-child(3)) { animation-delay: 0.16s; }
+  .sheet:global(.writing) :global(.sheet-body > :nth-child(4)) { animation-delay: 0.25s; }
+  .sheet:global(.writing) :global(.sheet-body > :nth-child(5)) { animation-delay: 0.34s; }
+  .sheet:global(.writing) :global(.sheet-body > :nth-child(6)) { animation-delay: 0.43s; }
+  .sheet:global(.writing) :global(.sheet-body > :nth-child(7)) { animation-delay: 0.52s; }
   @keyframes write {
     from {
       clip-path: inset(0 100% 0 0);
@@ -401,9 +272,6 @@ const { sheet } = Astro.props;
       width: 100%;
       margin-top: 0;
       transform: none;
-    }
-    .lip {
-      display: none;
     }
   }
   @media (prefers-reduced-motion: reduce) {

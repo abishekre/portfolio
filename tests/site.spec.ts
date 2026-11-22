@@ -316,15 +316,13 @@ test('Control Center is a solid panel (no frosted glass)', async ({ page }) => {
   expect(await sheet.evaluate((el) => getComputedStyle(el).backdropFilter)).toBe('none');
 });
 
-test('clipboard turns forward into an app and back coming home', async ({ page }) => {
+test('clipboard rewrites for an app and back for home', async ({ page }) => {
   test.skip(isMobile(page), 'the desk is a desktop thing');
   await page.goto('/');
   await page.locator('a.app[href="/kcal"]').click();
   await expect(page.locator('[data-clipboard]')).toHaveAttribute('data-dir', 'forward');
-  await expect(page.locator('[data-pad]')).toHaveAttribute('data-turned', '1');
   await page.keyboard.press('Escape');
   await expect(page.locator('[data-clipboard]')).toHaveAttribute('data-dir', 'back');
-  await expect(page.locator('[data-pad]')).toHaveAttribute('data-turned', '0');
 });
 
 test('ID card holds still under the cursor', async ({ page }) => {
