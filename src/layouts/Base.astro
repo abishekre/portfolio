@@ -286,7 +286,7 @@ const person = {
       import.meta.env.PROD && (
         <script is:inline>
           // Works offline after one visit (public/sw.js).
-          if ('serviceWorker' in navigator) addEventListener('load', function () { navigator.serviceWorker.register('/sw.js').catch(function () {}); });
+          if ('serviceWorker' in navigator) addEventListener('load', function () { navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {}); });
           // Leads: count résumé and contact-card downloads, and notes sent from the desk.
           document.addEventListener('click', function (e) {
             var a = e.target.closest && e.target.closest('a[href]');
